@@ -1,0 +1,47 @@
+{
+  "name": "iqra-app",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "build:index": "node scripts/build-iqra-index.mjs",
+    "check:runtime-egress": "node scripts/check-runtime-egress.mjs",
+    "create:admin": "node scripts/create-admin.mjs",
+    "db:migrate": "node scripts/run-migrations.mjs",
+    "ingest:worker": "node scripts/run-ingestion-worker.mjs",
+    "ingest:once": "node scripts/run-ingestion-worker.mjs --once",
+    "prepare:training": "node scripts/prepare-training-dataset.mjs",
+    "eval:run": "node scripts/run-evaluation.mjs",
+    "verify:training": "node scripts/verify-training-questions.mjs",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@auth/pg-adapter": "^1.11.2",
+    "bcryptjs": "^3.0.3",
+    "firebase": "^12.15.0",
+    "firebase-admin": "^14.0.0",
+    "lucide-react": "^1.21.0",
+    "mammoth": "^1.12.0",
+    "next": "16.2.9",
+    "next-auth": "^4.24.14",
+    "pdf-parse": "^2.4.5",
+    "pg": "^8.22.0",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "stripe": "^22.2.3",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/pg": "^8.20.0",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.9",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
