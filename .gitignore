@@ -8,3 +8,12 @@ IQRA - all final/
 
 # Safety: never commit local tunnel/runtime artefacts
 *.log
+*.pid
+*.tmp
+*.temp
+*.swp
+*.swo
+
+# Local helper outputs
+copilot-terminal-output-*.txt
+chat-session-resources/
