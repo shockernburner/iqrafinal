@@ -57,6 +57,11 @@ const dataRoot = path.join(process.cwd(), "data");
 let knowledgeCache: Promise<KnowledgeIndex> | undefined;
 let trainingCache: Promise<TrainingIndex> | undefined;
 
+export function clearIqraRetrievalCaches() {
+  knowledgeCache = undefined;
+  trainingCache = undefined;
+}
+
 function cleanTitle(title: string) {
   const cleaned = title.replace(/[-_]/g, " ").replace(/\bpr\b.*$/i, "").replace(/\s+/g, " ").trim();
   return cleaned.length > 64 ? `${cleaned.slice(0, 61).trim()}...` : cleaned;

@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { generateConfidenceGatedChatResponse } from "@/lib/chat-response";
+import { startAsyncChatJob } from "@/lib/chat-async-jobs";
 import { rateLimit } from "@/lib/rate-limit";
+
+export const runtime = "nodejs";
 
 export async function POST(request: NextRequest) {
   const limited = rateLimit(request, { scope: "chat", limit: 30, windowMs: 60_000 });
@@ -13,10 +15,15 @@ export async function POST(request: NextRequest) {
   }
 
   const { prompt } = (await request.json()) as { prompt?: string };
-
   if (!prompt?.trim()) {
     return NextResponse.json({ error: "Prompt is required." }, { status: 400 });
   }
 
-  return NextResponse.json(await generateConfidenceGatedChatResponse(prompt));
+  const job = await startAsyncChatJob(session.user.id, prompt.trim());
+  return NextResponse.json({
+    jobId: job.jobId,
+    status: job.status,
+    stage: job.stage,
+    attempt: job.attempt,
+  });
 }

@@ -4,7 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:3001": "next dev -p 3001",
     "build": "next build",
+    "build:webpack": "next build --webpack",
     "build:index": "node scripts/build-iqra-index.mjs",
     "check:runtime-egress": "node scripts/check-runtime-egress.mjs",
     "create:admin": "node scripts/create-admin.mjs",
@@ -15,6 +17,8 @@
     "eval:run": "node scripts/run-evaluation.mjs",
     "verify:training": "node scripts/verify-training-questions.mjs",
     "start": "next start",
+    "start:3001": "next start -p 3001",
+    "start:stable:3001": "npm run build:webpack && next start -p 3001",
     "lint": "eslint"
   },
   "dependencies": {
