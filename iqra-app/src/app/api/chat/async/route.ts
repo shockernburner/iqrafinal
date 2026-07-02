@@ -19,11 +19,22 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Prompt is required." }, { status: 400 });
   }
 
-  const job = await startAsyncChatJob(session.user.id, prompt.trim());
-  return NextResponse.json({
-    jobId: job.jobId,
-    status: job.status,
-    stage: job.stage,
-    attempt: job.attempt,
-  });
+  try {
+    const job = await startAsyncChatJob(session.user.id, prompt.trim());
+    return NextResponse.json({
+      jobId: job.jobId,
+      status: job.status,
+      stage: job.stage,
+      attempt: job.attempt,
+    });
+  } catch (error) {
+    const dbError = error as { code?: string; constraint?: string };
+    if (dbError.code === "23503" && dbError.constraint === "chat_async_jobs_user_id_fkey") {
+      return NextResponse.json(
+        { error: "Your session is stale. Please sign out and sign in again." },
+        { status: 401 },
+      );
+    }
+    return NextResponse.json({ error: "Unable to start background processing." }, { status: 500 });
+  }
 }

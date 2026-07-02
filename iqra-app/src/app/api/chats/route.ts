@@ -56,12 +56,24 @@ export async function POST(request: NextRequest) {
   const { title } = (await request.json().catch(() => ({}))) as { title?: unknown };
   const normalizedTitle = normalizeTitle(title);
 
-  const inserted = await query<{ id: string; title: string; updated_at: string }>(
-    `INSERT INTO chat_threads (user_id, title)
-     VALUES ($1, $2)
-     RETURNING id, title, updated_at`,
-    [session.user.id, normalizedTitle],
-  );
+  let inserted;
+  try {
+    inserted = await query<{ id: string; title: string; updated_at: string }>(
+      `INSERT INTO chat_threads (user_id, title)
+       VALUES ($1, $2)
+       RETURNING id, title, updated_at`,
+      [session.user.id, normalizedTitle],
+    );
+  } catch (error) {
+    const dbError = error as { code?: string; constraint?: string };
+    if (dbError.code === "23503" && dbError.constraint === "chat_threads_user_id_fkey") {
+      return NextResponse.json(
+        { error: "Your session is stale. Please sign out and sign in again." },
+        { status: 401 },
+      );
+    }
+    return NextResponse.json({ error: "Unable to create chat." }, { status: 500 });
+  }
 
   const thread = inserted.rows[0];
   return NextResponse.json({
