@@ -2,7 +2,8 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useLogin } from "@workspace/api-client-react";
+import { useLogin, getGetSessionQueryKey } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useLocation, Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Input } from "@/components/ui/input";
@@ -21,7 +22,8 @@ const loginSchema = z.object({
 export default function Login() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  
+  const queryClient = useQueryClient();
+
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -32,7 +34,8 @@ export default function Login() {
 
   const loginMutation = useLogin({
     mutation: {
-      onSuccess: () => {
+      onSuccess: (user) => {
+        queryClient.setQueryData(getGetSessionQueryKey(), { user });
         toast({ title: "Welcome back", description: "Successfully signed in." });
         setLocation("/");
       },

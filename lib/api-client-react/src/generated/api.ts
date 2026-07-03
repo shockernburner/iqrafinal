@@ -463,9 +463,9 @@ export const getRegisterUrl = () => {
 /**
  * @summary Register a new account
  */
-export const register = async (registerInput: RegisterInput, options?: RequestInit): Promise<OkResponse> => {
+export const register = async (registerInput: RegisterInput, options?: RequestInit): Promise<AuthUser> => {
 
-  return customFetch<OkResponse>(getRegisterUrl(),
+  return customFetch<AuthUser>(getRegisterUrl(),
   {
     ...options,
     method: 'POST',

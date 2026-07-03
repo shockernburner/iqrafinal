@@ -1,7 +1,8 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useRegister } from "@workspace/api-client-react";
+import { useRegister, getGetSessionQueryKey } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useLocation, Link } from "wouter";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -14,13 +15,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 const registerSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
   email: z.string().email({ message: "Please enter a valid email address." }),
-  password: z.string().min(6, { message: "Password must be at least 6 characters." }),
+  password: z.string().min(12, { message: "Password must be at least 12 characters." }),
 });
 
 export default function Register() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  
+  const queryClient = useQueryClient();
+
   const form = useForm<z.infer<typeof registerSchema>>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
@@ -32,9 +34,10 @@ export default function Register() {
 
   const registerMutation = useRegister({
     mutation: {
-      onSuccess: () => {
-        toast({ title: "Account created", description: "You can now sign in." });
-        setLocation("/login");
+      onSuccess: (user) => {
+        queryClient.setQueryData(getGetSessionQueryKey(), { user });
+        toast({ title: "Account created", description: "Welcome to IQRA Assistant." });
+        setLocation("/");
       },
       onError: (error: any) => {
         toast({ 

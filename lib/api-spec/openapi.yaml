@@ -118,11 +118,11 @@ paths:
               $ref: "#/components/schemas/RegisterInput"
       responses:
         "200":
-          description: Registered
+          description: Registered and signed in
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OkResponse"
+                $ref: "#/components/schemas/AuthUser"
         "400":
           description: Invalid input
           content:

@@ -74,7 +74,10 @@ export const RegisterBody = zod.object({
 })
 
 export const RegisterResponse = zod.object({
-  "ok": zod.boolean()
+  "id": zod.string(),
+  "email": zod.string(),
+  "name": zod.string().nullable(),
+  "role": zod.enum(['user', 'admin'])
 })
 
 

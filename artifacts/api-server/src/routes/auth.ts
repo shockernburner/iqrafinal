@@ -74,8 +74,9 @@ router.post("/auth/register", async (req, res) => {
   const passwordHash = await hashPassword(body.password);
 
   try {
-    await pool.query(
-      `INSERT INTO users (email, name, password_hash, role) VALUES ($1, $2, $3, 'user')`,
+    const inserted = await pool.query<{ id: string; email: string; name: string; role: "user" | "admin" }>(
+      `INSERT INTO users (email, name, password_hash, role) VALUES ($1, $2, $3, 'user')
+       RETURNING id, email, name, role`,
       [email, name, passwordHash],
     );
     await pool.query(
@@ -88,7 +89,12 @@ router.post("/auth/register", async (req, res) => {
       req.log?.warn?.({ err: error }, "Failed to send welcome email");
     });
 
-    const data = RegisterResponse.parse({ ok: true });
+    const row = inserted.rows[0]!;
+    const sessionUser = { id: row.id, email: row.email, name: row.name, role: row.role };
+    const token = signSessionToken(sessionUser);
+    setSessionCookie(res, token);
+
+    const data = RegisterResponse.parse(sessionUser);
     res.json(data);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Registration failed.";
