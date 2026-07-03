@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { query } from "@/lib/db";
+import { sendWelcomeEmail } from "@/lib/email";
 import { rateLimit } from "@/lib/rate-limit";
 
 function normalizeEmail(value: unknown) {
@@ -41,6 +42,13 @@ export async function POST(request: NextRequest) {
        VALUES ('user_registered', 'user', $1, $2::jsonb)`,
       [email, JSON.stringify({ source: "self_service_registration" })],
     );
+
+    try {
+      await sendWelcomeEmail({ to: email, name: name || email });
+    } catch (error) {
+      console.error("Failed to send welcome email:", error);
+    }
+
     return NextResponse.json({ ok: true });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Registration failed.";

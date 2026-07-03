@@ -1,0 +1,8 @@
+modules = ["nodejs-20"]
+
+[deployment]
+run = ["sh", "-lc", "npm run db:migrate && (npm run ingest:worker &) && npm run start"]
+build = ["sh", "-lc", "npm ci && npm run build"]
+
+[nix]
+channel = "stable-24_05"

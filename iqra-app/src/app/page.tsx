@@ -3,7 +3,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import {
-  BookOpen,
   Calculator,
   CheckCircle2,
   ExternalLink,
@@ -59,6 +58,22 @@ type AsyncChatStatus = {
 type Message =
   | { id: string; role: "user"; text: string }
   | ({ id: string; role: "assistant"; basmala: string } & IqraResponse);
+
+function getUserInitials(name?: string | null, email?: string | null) {
+  const cleanName = name?.trim();
+  if (cleanName) {
+    const parts = cleanName.split(/\s+/u).filter(Boolean);
+    const initials = parts.slice(0, 2).map((part) => part[0]?.toUpperCase() ?? "").join("");
+    if (initials) return initials;
+  }
+
+  const localPart = email?.split("@")[0]?.trim();
+  if (localPart) {
+    return localPart.slice(0, 2).toUpperCase();
+  }
+
+  return "U";
+}
 
 function NavButton({
   tab,
@@ -167,6 +182,10 @@ export default function Home() {
   });
   const [loadingPhraseIndex, setLoadingPhraseIndex] = useState(0);
   const [loadingDotCount, setLoadingDotCount] = useState(0);
+  const userInitials = useMemo(
+    () => getUserInitials(session?.user?.name, session?.user?.email),
+    [session?.user?.name, session?.user?.email],
+  );
 
   useEffect(() => {
     if (!isSending) return;
@@ -394,7 +413,7 @@ export default function Home() {
       <div className="mx-auto grid min-h-screen w-full max-w-6xl grid-cols-1 lg:grid-cols-[320px_minmax(0,1fr)]">
         <aside className="hidden border-r border-[#E5E5E5] bg-white/75 px-5 py-6 backdrop-blur lg:block">
           <div className="flex items-center gap-3">
-            <Image src="/brand/logo.jpg" alt="IQRA logo" width={44} height={44} className="h-11 w-11 rounded-md object-cover" priority />
+            <Image src="/logo.png" alt="IQRA logo" width={44} height={44} className="h-11 w-11 rounded-md object-cover" priority />
             <div>
               <p className="text-sm font-semibold uppercase text-[#D4AF37]">IQRA</p>
               <h1 className="text-xl font-semibold">Assistant</h1>
@@ -449,7 +468,7 @@ export default function Home() {
         <main className="relative flex min-h-screen flex-col overflow-hidden bg-[radial-gradient(circle_at_top_right,rgba(212,175,55,0.12),transparent_32%),linear-gradient(180deg,#FFFFFF_0%,#F8F9FA_100%)]">
           <header className="sticky top-0 z-20 flex items-center justify-between border-b border-[#E5E5E5] bg-white/82 px-4 py-3 backdrop-blur-md sm:px-6">
             <div className="flex min-w-0 items-center gap-3">
-              <Image src="/brand/logo.jpg" alt="IQRA logo" width={38} height={38} className="h-10 w-10 rounded-md object-cover lg:hidden" priority />
+              <Image src="/logo.png" alt="IQRA logo" width={38} height={38} className="h-10 w-10 rounded-md object-cover lg:hidden" priority />
               <div className="min-w-0">
                 <p className="truncate text-sm font-semibold text-[#D4AF37]">IQRA Assistant</p>
                 <p className="truncate text-xs text-[#6D6D6D]">
@@ -500,6 +519,7 @@ export default function Home() {
                   openChecklist={() => setShowChecklist(true)}
                   openZakat={() => setShowZakat(true)}
                   onNewChat={startNewChat}
+                  userInitials={userInitials}
                 />
               ) : null}
 
@@ -531,6 +551,7 @@ function HomeTab({
   openChecklist,
   openZakat,
   onNewChat,
+  userInitials,
 }: {
   messages: Message[];
   input: string;
@@ -543,6 +564,7 @@ function HomeTab({
   openChecklist: () => void;
   openZakat: () => void;
   onNewChat: () => void;
+  userInitials: string;
 }) {
   return (
     <div className="space-y-4">
@@ -560,8 +582,11 @@ function HomeTab({
       ) : (
         messages.map((message) =>
           message.role === "user" ? (
-            <div className="ml-auto max-w-2xl rounded-md bg-[#EDEDED] px-4 py-3 text-sm leading-6 shadow-sm" key={message.id}>
-              {message.text}
+            <div className="ml-auto flex max-w-2xl items-start gap-2" key={message.id}>
+              <div className="rounded-md bg-[#EDEDED] px-4 py-3 text-sm leading-6 shadow-sm">{message.text}</div>
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#D4AF37] text-xs font-semibold text-white">
+                {userInitials}
+              </div>
             </div>
           ) : (
             <AssistantMessage key={message.id} message={message} openChecklist={openChecklist} openZakat={openZakat} />
@@ -609,9 +634,7 @@ function AssistantMessage({ message, openChecklist, openZakat }: { message: Extr
   return (
     <article className="rounded-md border border-[#E5E5E5] bg-white p-4 shadow-sm sm:p-5">
       <div className="mb-4 flex items-center gap-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-md bg-[#D4AF37]/12 text-[#8A6D16]">
-          <BookOpen size={19} />
-        </div>
+        <Image src="/logo.png" alt="IQRA" width={36} height={36} className="h-9 w-9 rounded-full object-cover" />
         <div>
           <p className="text-sm font-semibold text-[#D4AF37]">IQRA Response</p>
           <p className="text-xs text-[#777777]">Practical guidance with source links</p>
@@ -723,8 +746,8 @@ function SettingsTab({ displayName, saveDisplayName, startDonation, isDonating, 
       </section>
 
       <section className="rounded-md border border-[#E5E5E5] bg-white p-5 shadow-sm">
-        <h2 className="text-lg font-semibold">Billing</h2>
-        <p className="mt-2 text-sm leading-6 text-[#666666]">Stripe payments are kept behind environment keys until the real domain is purchased and live mode is approved.</p>
+        <h2 className="text-lg font-semibold">Support IQRA</h2>
+        <p className="mt-2 text-sm leading-6 text-[#666666]">Donations are processed securely with Stripe and directly support ongoing IQRA operations.</p>
         <button className="mt-4 inline-flex h-11 items-center justify-center gap-2 rounded-md border border-[#D4AF37]/35 bg-[#D4AF37]/10 px-4 text-sm font-semibold text-[#7A6218] transition hover:bg-[#D4AF37]/18" disabled={isDonating} onClick={() => void startDonation()} type="button">
           {isDonating ? <Loader2 className="animate-spin" size={16} /> : <Landmark size={16} />} Donate now
         </button>

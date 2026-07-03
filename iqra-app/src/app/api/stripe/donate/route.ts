@@ -21,6 +21,9 @@ export async function POST(request: NextRequest) {
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
+      metadata: {
+        purpose: "donation",
+      },
       line_items: [lineItem],
       success_url: `${appUrl}/donate/thank-you`,
       cancel_url: appUrl,

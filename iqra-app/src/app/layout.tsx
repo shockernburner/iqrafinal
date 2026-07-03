@@ -11,6 +11,11 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "IQRA Assistant",
   description: "Clear Islamic ethics for modern leaders.",
+  icons: {
+    icon: "/logo.png",
+    shortcut: "/logo.png",
+    apple: "/logo.png",
+  },
 };
 
 export default function RootLayout({
