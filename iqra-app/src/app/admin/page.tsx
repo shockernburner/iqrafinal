@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Database, FileUp, ListChecks, ShieldCheck } from "lucide-react";
 import { requireAdmin } from "@/lib/authz";
 import { AdminDocumentManager } from "@/app/admin/AdminDocumentManager";
+import { AdminOperationsPanel } from "@/app/admin/AdminOperationsPanel";
 
 const adminCards = [
   {
@@ -60,6 +61,7 @@ export default async function AdminPage() {
         </section>
 
         <AdminDocumentManager />
+        <AdminOperationsPanel />
 
         <Link className="mt-6 inline-flex rounded-md border border-[#E5E5E5] bg-white px-4 py-2 text-sm font-semibold hover:border-[#D4AF37]/60" href="/">
           Back to workspace

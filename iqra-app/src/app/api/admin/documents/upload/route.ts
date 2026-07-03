@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { startAdminMaintenance } from "@/lib/admin-maintenance";
 import { getAdminApiSession } from "@/lib/authz";
 import { storeKnowledgeUpload } from "@/lib/knowledge-upload";
 
@@ -22,6 +23,9 @@ export async function POST(request: NextRequest) {
     if ("error" in result) {
       return NextResponse.json({ error: result.error }, { status: result.status });
     }
+
+    startAdminMaintenance("refresh-all", session.user.id);
+
     return NextResponse.json(result, { status: 202 });
   } catch {
     return NextResponse.json({ error: "Upload failed before indexing could be queued." }, { status: 503 });

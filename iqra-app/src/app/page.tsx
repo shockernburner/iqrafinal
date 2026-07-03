@@ -478,6 +478,12 @@ export default function Home() {
             </div>
 
             <div className="flex items-center gap-2">
+              {sessionStatus === "authenticated" && session?.user?.role === "admin" ? (
+                <Link className="inline-flex h-10 items-center justify-center rounded-md border border-[#E5E5E5] bg-white px-3 text-sm font-semibold text-[#444444] hover:border-[#D4AF37]/60" href="/admin">
+                  Admin
+                </Link>
+              ) : null}
+
               {sessionStatus === "authenticated" ? (
                 <button
                   className="inline-flex h-10 items-center justify-center rounded-md border border-[#E5E5E5] bg-white px-3 text-sm font-semibold text-[#444444] hover:border-[#D4AF37]/60"
