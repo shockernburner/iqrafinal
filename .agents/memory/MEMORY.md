@@ -1,2 +1,4 @@
 - [Express API server esbuild build](api-server-esbuild-build.md) — esbuild only bundles JS; non-JS runtime assets (SQL migrations, data files) must be explicitly copied into dist.
 - [Orval react-query hook option typing](orval-query-option-typing.md) — generated hooks sometimes report `queryKey` as required even though it's injected internally; cast the options object, don't try to satisfy the type.
+- [pdf-parse v2 Node canvas polyfill](pdf-parse-node-canvas-polyfill.md) — pdf-parse v2 needs `@napi-rs/canvas` installed in Node or it crashes with "DOMMatrix is not defined", even for text-only extraction.
+- [Express webhook raw-body scoping](express-webhook-raw-body-scoping.md) — scope `express.raw()` to the exact webhook path, never a shared prefix, or it silently breaks `express.json()` for sibling routes.

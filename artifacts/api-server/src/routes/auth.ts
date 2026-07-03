@@ -17,6 +17,7 @@ import {
   signSessionToken,
   verifyPassword,
 } from "../lib/auth";
+import { sendWelcomeEmail } from "../lib/email";
 
 const router: IRouter = Router();
 
@@ -82,6 +83,10 @@ router.post("/auth/register", async (req, res) => {
        VALUES ('user_registered', 'user', $1, $2::jsonb)`,
       [email, JSON.stringify({ source: "self_service_registration" })],
     );
+
+    sendWelcomeEmail(email, name).catch((error) => {
+      req.log?.warn?.({ err: error }, "Failed to send welcome email");
+    });
 
     const data = RegisterResponse.parse({ ok: true });
     res.json(data);

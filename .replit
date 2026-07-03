@@ -21,3 +21,9 @@ timeoutMs = 20000
 
 [nix]
 channel = "stable-25_05"
+
+[userenv]
+
+[userenv.shared]
+RESEND_FROM_WELCOME_EMAIL = "welcome@iqra.live"
+RESEND_FROM_DONATION_EMAIL = "thanks@iqra.live"

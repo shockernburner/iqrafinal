@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
-import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { pool } from "@workspace/db";
+import { objectStorageClient } from "./objectStorage";
 
 const allowedTypes = new Map([
   ["pdf", new Set(["application/pdf"])],
@@ -16,6 +16,37 @@ function cleanFileName(fileName: string) {
 
 function getExtension(fileName: string) {
   return path.extname(fileName).replace(/^\./u, "").toLowerCase();
+}
+
+function getKnowledgeBucketAndPrefix() {
+  const privateObjectDir = process.env.PRIVATE_OBJECT_DIR || "";
+  if (!privateObjectDir) {
+    throw new Error(
+      "PRIVATE_OBJECT_DIR not set. Object storage must be provisioned before knowledge uploads can be stored.",
+    );
+  }
+  const trimmed = privateObjectDir.replace(/^\//u, "");
+  const [bucketName, ...rest] = trimmed.split("/");
+  if (!bucketName) {
+    throw new Error(`Invalid PRIVATE_OBJECT_DIR value: "${privateObjectDir}"`);
+  }
+  const prefix = [...rest, "knowledge"].filter(Boolean).join("/");
+  return { bucketName, prefix };
+}
+
+async function writeKnowledgeObject(storageKey: string, bytes: Buffer, contentType: string) {
+  const { bucketName, prefix } = getKnowledgeBucketAndPrefix();
+  const objectName = `${prefix}/${storageKey}`;
+  const bucket = objectStorageClient.bucket(bucketName);
+  await bucket.file(objectName).save(bytes, { contentType, resumable: false });
+}
+
+export async function readKnowledgeObject(storageKey: string): Promise<Buffer> {
+  const { bucketName, prefix } = getKnowledgeBucketAndPrefix();
+  const objectName = `${prefix}/${storageKey}`;
+  const bucket = objectStorageClient.bucket(bucketName);
+  const [bytes] = await bucket.file(objectName).download();
+  return bytes;
 }
 
 function validateUpload(file: Express.Multer.File) {
@@ -49,11 +80,8 @@ export async function storeKnowledgeUpload(file: Express.Multer.File, userId: st
   }
 
   const safeName = cleanFileName(file.originalname);
-  const storageRoot = path.join(process.cwd(), "storage", "knowledge");
-  const storageKey = path.join(new Date().toISOString().slice(0, 10), `${randomUUID()}-${safeName}`);
-  const absolutePath = path.join(storageRoot, storageKey);
-  await mkdir(path.dirname(absolutePath), { recursive: true });
-  await writeFile(absolutePath, bytes, { flag: "wx" });
+  const storageKey = `${new Date().toISOString().slice(0, 10)}/${randomUUID()}-${safeName}`;
+  await writeKnowledgeObject(storageKey, bytes, file.mimetype || "application/octet-stream");
 
   const client = await pool.connect();
   try {

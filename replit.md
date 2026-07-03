@@ -12,6 +12,9 @@ An Islamic ethics and leadership chat assistant: users register/login, chat with
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
 - Required env: `DATABASE_URL` — Postgres connection string, `SESSION_SECRET` — JWT signing secret (already set)
 - Optional env: `STRIPE_SECRET_KEY` — enables live donate checkout; without it, `/api/donate` returns `{ url: null }` and the frontend shows a graceful message
+- Optional env: `STRIPE_WEBHOOK_SECRET` — enables `/api/stripe/webhook` signature verification; without it, the webhook returns HTTP 501
+- Optional env: `RESEND_API_KEY`, `RESEND_FROM_WELCOME_EMAIL`, `RESEND_FROM_DONATION_EMAIL` — enable transactional emails (welcome on register, thank-you on donation); missing config logs a warning and skips the send (best-effort, never blocks the request)
+- Object storage (Replit App Storage / GCS) is required for knowledge uploads: `PRIVATE_OBJECT_DIR`, `DEFAULT_OBJECT_STORAGE_BUCKET_ID`, `PUBLIC_OBJECT_SEARCH_PATHS` (provisioned via `setupObjectStorage()`)
 - Create/promote an admin user: `cd artifacts/api-server && npx tsx src/scripts/create-admin.ts <email> <password> [name]`
 
 ## Stack
@@ -28,8 +31,8 @@ An Islamic ethics and leadership chat assistant: users register/login, chat with
 ## Where things live
 
 - Frontend pages: `artifacts/iqra-assistant/src/pages/` (chat, login, register, donate, admin, thank-you)
-- Backend routes: `artifacts/api-server/src/routes/` (auth, chat, chats, admin, donate, voice)
-- Backend business logic: `artifacts/api-server/src/lib/` (auth, chat generation, admin maintenance, knowledge upload, training data)
+- Backend routes: `artifacts/api-server/src/routes/` (auth, chat, chats, admin, donate, voice, stripe-webhook)
+- Backend business logic: `artifacts/api-server/src/lib/` (auth, chat generation, admin maintenance, knowledge upload, training data, email, ingestion-worker, objectStorage/objectAcl)
 - DB migrations: `artifacts/api-server/src/db/migrations/*.sql`, runner in `src/db/migrate.ts`
 - API contract (source of truth): `lib/api-spec/openapi.yaml` → generates `lib/api-zod` and `lib/api-client-react`
 
@@ -40,6 +43,10 @@ An Islamic ethics and leadership chat assistant: users register/login, chat with
 - Voice transcription (`/api/voice/transcribe`) intentionally returns HTTP 501 "not configured" — no fake transcription data, per no-silent-fallback principle.
 - Admin maintenance jobs are simulated in-memory (progress/logs) rather than spawning real npm scripts, since the original scripts don't exist in this stack.
 - Training question records live in a JSON file + in-memory additions (no DB table); additions do not persist across server restarts.
+- Knowledge uploads are stored in Object Storage (GCS-backed), not local/VM disk, since VM disk isn't guaranteed to survive redeploys. Admin uploads still go through the existing multer (in-memory) route; the server writes the buffer directly to the bucket (`lib/knowledge-upload.ts`) rather than using the presigned-URL client flow, since the bytes already arrive server-side.
+- The background ingestion worker (text extraction + chunking, PDF/DOCX/TXT/HTML) runs as an in-process polling loop started from `index.ts`, not a separate OS process — matches the Reserved VM's single always-on process model. It does NOT compute vector embeddings (no embeddings API available via Replit AI integrations, and chat generation never reads `document_chunks`/embeddings anyway); the `embedding` column is left null and full-text search relies on the existing `search_vector` tsvector column.
+- Stripe webhook (`POST /api/stripe/webhook`) requires the raw request body for signature verification, so it's mounted in `app.ts` with `express.raw()` scoped to only that path, before the global `express.json()` — mounting raw-body parsing broadly at `/api` breaks JSON body parsing for every other route.
+- Transactional email (Resend) is best-effort: send failures/missing config are logged and swallowed, never block registration or the donation webhook.
 
 ## Product
 
@@ -55,6 +62,8 @@ _Populate as you build — explicit user instructions worth remembering across s
 - esbuild only bundles JS — see `.agents/memory/api-server-esbuild-build.md` for why non-JS runtime files (migrations, data) need an explicit copy step in `build.mjs`.
 - Generated Orval query hooks can falsely require `queryKey` in options — see `.agents/memory/orval-query-option-typing.md`.
 - Always restart both `artifacts/api-server` and `artifacts/iqra-assistant` workflows after backend or frontend code changes.
+- `pdf-parse` v2 (pdfjs-dist under the hood) throws `DOMMatrix is not defined` at import time in Node unless `@napi-rs/canvas` is installed, even though we never render/rasterize — it's needed purely for the polyfills pdfjs-dist expects to exist.
+- Express raw-body middleware (`express.raw()`) for a webhook must be scoped to that exact route path, not a shared prefix like `/api` — mounting it broadly consumes the body stream for every route under that prefix and silently breaks `express.json()` parsing for all of them.
 
 ## Pointers
 
