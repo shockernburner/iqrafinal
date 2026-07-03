@@ -12,7 +12,7 @@ const router: IRouter = Router();
 router.use(healthRouter);
 router.use(authRouter);
 router.use(chatRouter);
-router.use(chatsRouter);
+router.use("/chats", chatsRouter);
 router.use("/admin", adminRouter);
 router.use(donateRouter);
 router.use(voiceRouter);

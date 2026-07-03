@@ -16,7 +16,7 @@ const router: IRouter = Router();
 
 router.use(attachUser, requireUser);
 
-router.get("/chats", async (req, res) => {
+router.get("/", async (req, res) => {
   const result = await pool.query<{
     id: string;
     title: string;
@@ -42,7 +42,7 @@ router.get("/chats", async (req, res) => {
   res.json(data);
 });
 
-router.post("/chats", async (req, res) => {
+router.post("/", async (req, res) => {
   const body = CreateChatBody.parse(req.body);
   const title = body.title?.trim().slice(0, 120) || "New chat";
 
@@ -60,7 +60,7 @@ router.post("/chats", async (req, res) => {
   res.status(201).json(data);
 });
 
-router.get("/chats/:id", async (req, res) => {
+router.get("/:id", async (req, res) => {
   const params = GetChatParams.parse(req.params);
 
   const thread = await pool.query("SELECT id FROM chat_threads WHERE id = $1 AND user_id = $2", [
@@ -97,7 +97,7 @@ router.get("/chats/:id", async (req, res) => {
   res.json(data);
 });
 
-router.post("/chats/:id/turn", async (req, res) => {
+router.post("/:id/turn", async (req, res) => {
   const params = AppendChatTurnParams.parse(req.params);
   const body = AppendChatTurnBody.parse(req.body);
 
