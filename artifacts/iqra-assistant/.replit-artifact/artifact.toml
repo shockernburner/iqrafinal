@@ -23,6 +23,14 @@ publicDir = "artifacts/iqra-assistant/dist/public"
 serve = "static"
 
 [[services.production.rewrites]]
+from = "/login"
+to = "/login/index.html"
+
+[[services.production.rewrites]]
+from = "/register"
+to = "/register/index.html"
+
+[[services.production.rewrites]]
 from = "/*"
 to = "/index.html"
 

@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import logoPng from "@/assets/logo.png";
 import { Loader2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { useSeo } from "@/hooks/use-seo";
 
 const registerSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -19,6 +20,12 @@ const registerSchema = z.object({
 });
 
 export default function Register() {
+  useSeo({
+    title: "Create Account — IQRA Assistant",
+    description: "Create a free IQRA Assistant account to start receiving guidance rooted in traditional Islamic ethics and leadership texts.",
+    robots: "noindex, follow",
+    canonicalPath: "/register",
+  });
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();

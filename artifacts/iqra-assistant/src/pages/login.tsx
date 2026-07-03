@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import logoPng from "@/assets/logo.png";
 import { Loader2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { useSeo } from "@/hooks/use-seo";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address." }),
@@ -20,6 +21,12 @@ const loginSchema = z.object({
 });
 
 export default function Login() {
+  useSeo({
+    title: "Sign In — IQRA Assistant",
+    description: "Sign in to your IQRA Assistant account to continue your conversations on Islamic ethics and leadership.",
+    robots: "noindex, follow",
+    canonicalPath: "/login",
+  });
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();

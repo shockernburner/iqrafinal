@@ -6,6 +6,7 @@ import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import NotFound from "@/pages/not-found";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
+import Landing from "@/pages/landing";
 import Chat from "@/pages/chat";
 import Donate from "@/pages/donate";
 import ThankYou from "@/pages/thank-you";
@@ -35,15 +36,32 @@ function ProtectedRoute({ component: Component, adminOnly = false }: { component
   return <Component />;
 }
 
+// The root route serves both the public marketing landing page (anonymous,
+// indexable) and the authenticated chat app, at the same stable URL ("/").
+// The prerendered static HTML shipped for "/" shows the anonymous Landing
+// state so crawlers see real content immediately; once the client loads it
+// swaps in Chat for signed-in users.
+function Home() {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  return user ? <Chat /> : <Landing />;
+}
+
 function Router() {
   return (
     <Switch>
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
       
-      <Route path="/">
-        {() => <ProtectedRoute component={Chat} />}
-      </Route>
+      <Route path="/" component={Home} />
       <Route path="/donate">
         {() => <ProtectedRoute component={Donate} />}
       </Route>
