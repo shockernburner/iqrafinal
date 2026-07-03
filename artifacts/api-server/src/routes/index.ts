@@ -13,7 +13,7 @@ router.use(healthRouter);
 router.use(authRouter);
 router.use(chatRouter);
 router.use(chatsRouter);
-router.use(adminRouter);
+router.use("/admin", adminRouter);
 router.use(donateRouter);
 router.use(voiceRouter);
 

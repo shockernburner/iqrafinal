@@ -25,7 +25,7 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 
 
 router.use(attachUser, requireAdmin);
 
-router.get("/admin/overview", async (_req, res) => {
+router.get("/overview", async (_req, res) => {
   const [documentsTotal, activeDocuments, usersTotal, adminsTotal, donations, trainingRecords, recentUsers] =
     await Promise.all([
       pool.query<{ count: string }>("SELECT count(*) FROM documents"),
@@ -74,7 +74,7 @@ router.get("/admin/overview", async (_req, res) => {
   res.json(data);
 });
 
-router.get("/admin/documents", async (_req, res) => {
+router.get("/documents", async (_req, res) => {
   const documents = await pool.query<{
     id: string;
     title: string;
@@ -129,7 +129,7 @@ router.get("/admin/documents", async (_req, res) => {
   res.json(data);
 });
 
-router.post("/admin/documents/upload", upload.single("file"), async (req, res) => {
+router.post("/documents/upload", upload.single("file"), async (req, res) => {
   if (!req.file) {
     res.status(400).json({ error: "A file is required." });
     return;
@@ -150,7 +150,7 @@ router.post("/admin/documents/upload", upload.single("file"), async (req, res) =
   res.status(201).json(data);
 });
 
-router.patch("/admin/documents/:id", async (req, res) => {
+router.patch("/documents/:id", async (req, res) => {
   const params = UpdateAdminDocumentParams.parse(req.params);
   const body = UpdateAdminDocumentBody.parse(req.body);
 
@@ -172,19 +172,19 @@ router.patch("/admin/documents/:id", async (req, res) => {
   res.json(data);
 });
 
-router.get("/admin/maintenance", (_req, res) => {
+router.get("/maintenance", (_req, res) => {
   const data = GetAdminMaintenanceResponse.parse(getAdminMaintenanceStatus());
   res.json(data);
 });
 
-router.post("/admin/maintenance", (req, res) => {
+router.post("/maintenance", (req, res) => {
   const body = StartAdminMaintenanceBody.parse(req.body);
   const result = startAdminMaintenance(body.action, req.user!.email);
   const data = StartAdminMaintenanceResponse.parse(result);
   res.json(data);
 });
 
-router.get("/admin/training", async (req, res) => {
+router.get("/training", async (req, res) => {
   const records = await loadTrainingRecords();
   const limit = 50;
   const data = ListAdminTrainingResponse.parse({
@@ -194,7 +194,7 @@ router.get("/admin/training", async (req, res) => {
   res.json(data);
 });
 
-router.post("/admin/training", async (req, res) => {
+router.post("/training", async (req, res) => {
   const body = AddAdminTrainingBody.parse(req.body);
   await addTrainingRecord(body.question, body.answer);
   const data = AddAdminTrainingResponse.parse({ ok: true });
