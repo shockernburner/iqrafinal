@@ -2,3 +2,4 @@
 - [Orval react-query hook option typing](orval-query-option-typing.md) — generated hooks sometimes report `queryKey` as required even though it's injected internally; cast the options object, don't try to satisfy the type.
 - [pdf-parse v2 Node canvas polyfill](pdf-parse-node-canvas-polyfill.md) — pdf-parse v2 needs `@napi-rs/canvas` installed in Node or it crashes with "DOMMatrix is not defined", even for text-only extraction.
 - [Express webhook raw-body scoping](express-webhook-raw-body-scoping.md) — scope `express.raw()` to the exact webhook path, never a shared prefix, or it silently breaks `express.json()` for sibling routes.
+- [IQRA Autoscale vs Reserved VM decision](iqra-autoscale-vs-vm-decision.md) — user deliberately deployed on Autoscale despite the in-process ingestion worker needing an always-on process; don't silently "fix" this.
