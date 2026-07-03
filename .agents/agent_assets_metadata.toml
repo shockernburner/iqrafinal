@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "osg_ehwv5ZCULAbPWKnfk"
+uri = "file://artifacts/iqra-promo/public/audio/bg_music.mp3"
+type = "audio"
+title = "background music"

@@ -1,0 +1,31 @@
+kind = "video"
+previewPath = "/iqra-promo/"
+title = "IQRA Promo Video"
+version = "1.0.0"
+id = "artifacts/iqra-promo"
+router = "path"
+
+[[integratedSkills]]
+name = "video-js"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/iqra-promo/" ]
+localPort = 22373
+
+[services.development]
+run = "pnpm --filter @workspace/iqra-promo run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/iqra-promo", "run", "build" ]
+publicDir = "artifacts/iqra-promo/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "22373"
+BASE_PATH = "/iqra-promo/"
