@@ -10,6 +10,20 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication
+  - name: chat
+    description: Chat with the IQRA assistant
+  - name: chats
+    description: Chat history threads
+  - name: admin
+    description: Admin dashboard operations
+  - name: donate
+    description: Donations via Stripe
+  - name: voice
+    description: Voice transcription
+  - name: sources
+    description: Knowledge source files
 paths:
   /healthz:
     get:
@@ -24,6 +38,608 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /ready:
+    get:
+      operationId: readinessCheck
+      tags: [health]
+      summary: Readiness check
+      responses:
+        "200":
+          description: Ready
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReadinessStatus"
+        "503":
+          description: Not ready
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReadinessStatus"
+
+  /auth/session:
+    get:
+      operationId: getSession
+      tags: [auth]
+      summary: Get the current session
+      responses:
+        "200":
+          description: Session (user is null when signed out)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Sign in with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: Signed in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Sign out
+      responses:
+        "200":
+          description: Signed out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+  /auth/register:
+    post:
+      operationId: register
+      tags: [auth]
+      summary: Register a new account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterInput"
+      responses:
+        "200":
+          description: Registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Account already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /chat:
+    post:
+      operationId: sendChat
+      tags: [chat]
+      summary: Send a prompt and get a synchronous IQRA response
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChatPromptInput"
+      responses:
+        "200":
+          description: Chat response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatResponse"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /chat/async:
+    post:
+      operationId: startChatJob
+      tags: [chat]
+      summary: Start an asynchronous chat generation job
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChatPromptInput"
+      responses:
+        "200":
+          description: Job started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatJobStart"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /chat/async/{jobId}:
+    get:
+      operationId: getChatJob
+      tags: [chat]
+      summary: Poll an asynchronous chat generation job
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Job status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatJobStatus"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Job not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /chats:
+    get:
+      operationId: listChats
+      tags: [chats]
+      summary: List the current user's chat threads
+      responses:
+        "200":
+          description: Chat threads
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatThreadList"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      operationId: createChat
+      tags: [chats]
+      summary: Create a new chat thread
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChatThreadInput"
+      responses:
+        "200":
+          description: Created thread
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatThread"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /chats/{id}:
+    get:
+      operationId: getChat
+      tags: [chats]
+      summary: Get a chat thread with its messages
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Chat thread detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatThreadDetail"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Chat not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /chats/{id}/turn:
+    post:
+      operationId: appendChatTurn
+      tags: [chats]
+      summary: Append a user/assistant turn to a chat thread
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChatTurnInput"
+      responses:
+        "200":
+          description: Turn saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Chat not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/overview:
+    get:
+      operationId: getAdminOverview
+      tags: [admin]
+      summary: Get admin dashboard overview stats
+      responses:
+        "200":
+          description: Overview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminOverview"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Admin only
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /admin/documents:
+    get:
+      operationId: listAdminDocuments
+      tags: [admin]
+      summary: List knowledge base documents
+      responses:
+        "200":
+          description: Documents
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminDocumentList"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Admin only
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /admin/documents/{id}:
+    post:
+      operationId: updateAdminDocument
+      tags: [admin]
+      summary: Retry, activate, deactivate, or delete a document
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminDocumentAction"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Admin only
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Document not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /admin/documents/upload:
+    post:
+      operationId: uploadAdminDocument
+      tags: [admin]
+      summary: Upload a new knowledge base document
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/DocumentUploadInput"
+      responses:
+        "200":
+          description: Uploaded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentUploadResult"
+        "400":
+          description: Invalid upload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Admin only
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Duplicate upload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /admin/maintenance:
+    get:
+      operationId: getAdminMaintenance
+      tags: [admin]
+      summary: Get the current maintenance job status
+      responses:
+        "200":
+          description: Maintenance status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminMaintenanceStatus"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Admin only
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      operationId: startAdminMaintenance
+      tags: [admin]
+      summary: Start a maintenance job
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminMaintenanceInput"
+      responses:
+        "200":
+          description: Maintenance job start result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminMaintenanceStartResult"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Admin only
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /admin/training:
+    get:
+      operationId: listAdminTraining
+      tags: [admin]
+      summary: List recent training records
+      responses:
+        "200":
+          description: Training records
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminTrainingList"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Admin only
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      operationId: addAdminTraining
+      tags: [admin]
+      summary: Add a training question/answer pair
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TrainingRecordInput"
+      responses:
+        "200":
+          description: Added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Admin only
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /donate:
+    post:
+      operationId: createDonationCheckout
+      tags: [donate]
+      summary: Create a Stripe checkout session for a donation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DonationInput"
+      responses:
+        "200":
+          description: Checkout session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DonationCheckout"
+        "500":
+          description: Unable to create checkout session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /voice/transcribe:
+    post:
+      operationId: transcribeVoice
+      tags: [voice]
+      summary: Transcribe a voice recording
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/VoiceUploadInput"
+      responses:
+        "200":
+          description: Transcription result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TranscriptionResult"
+        "400":
+          description: Invalid upload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -33,4 +649,497 @@ components:
           type: string
       required:
         - status
+    ReadinessStatus:
+      type: object
+      required: [ready, checks, timestamp]
+      properties:
+        ready:
+          type: boolean
+        timestamp:
+          type: string
+        checks:
+          type: object
+          additionalProperties:
+            type: string
 
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+    OkResponse:
+      type: object
+      required: [ok]
+      properties:
+        ok:
+          type: boolean
+
+    AuthUser:
+      type: object
+      required: [id, email, name, role]
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        name:
+          type: ["string", "null"]
+        role:
+          type: string
+          enum: [user, admin]
+    Session:
+      type: object
+      properties:
+        user:
+          oneOf:
+            - $ref: "#/components/schemas/AuthUser"
+            - type: "null"
+    LoginInput:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+    RegisterInput:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+        name:
+          type: string
+
+    SourceLink:
+      type: object
+      required: [label, href]
+      properties:
+        label:
+          type: string
+        href:
+          type: string
+    ChatPromptInput:
+      type: object
+      required: [prompt]
+      properties:
+        prompt:
+          type: string
+    ChatResponse:
+      type: object
+      required: [directAnswer, framework, source]
+      properties:
+        basmala:
+          type: string
+        directAnswer:
+          type: string
+        framework:
+          type: array
+          items:
+            type: string
+        source:
+          type: string
+        sourceLinks:
+          type: array
+          items:
+            $ref: "#/components/schemas/SourceLink"
+        requiresScholarReferral:
+          type: boolean
+        clarifyingQuestion:
+          type: ["string", "null"]
+        confidence:
+          type: string
+          enum: [high, medium, low]
+        responseHeld:
+          type: boolean
+        structured:
+          type: ["object", "null"]
+          additionalProperties: true
+    ChatJobStart:
+      type: object
+      required: [jobId, status, stage, attempt]
+      properties:
+        jobId:
+          type: string
+        status:
+          type: string
+          enum: [running, completed, failed]
+        stage:
+          type: string
+        attempt:
+          type: integer
+    ChatJobStatus:
+      type: object
+      required: [status, stage, attempt]
+      properties:
+        jobId:
+          type: string
+        status:
+          type: string
+          enum: [running, completed, failed]
+        stage:
+          type: string
+        attempt:
+          type: integer
+        lastConfidence:
+          type: ["string", "null"]
+          enum: [high, medium, low, null]
+        error:
+          type: ["string", "null"]
+        basmala:
+          type: string
+        directAnswer:
+          type: string
+        framework:
+          type: array
+          items:
+            type: string
+        source:
+          type: string
+        sourceLinks:
+          type: array
+          items:
+            $ref: "#/components/schemas/SourceLink"
+        requiresScholarReferral:
+          type: boolean
+        clarifyingQuestion:
+          type: ["string", "null"]
+        confidence:
+          type: ["string", "null"]
+          enum: [high, medium, low, null]
+        responseHeld:
+          type: boolean
+        structured:
+          type: ["object", "null"]
+          additionalProperties: true
+
+    ChatThreadInput:
+      type: object
+      properties:
+        title:
+          type: string
+    ChatThread:
+      type: object
+      required: [id, title, updatedAt]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        updatedAt:
+          type: string
+    ChatThreadSummary:
+      type: object
+      required: [id, title, updatedAt, preview]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        updatedAt:
+          type: string
+        preview:
+          type: ["string", "null"]
+    ChatThreadList:
+      type: object
+      required: [threads]
+      properties:
+        threads:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChatThreadSummary"
+    ChatMessage:
+      type: object
+      required: [id, role, content, responsePayload, createdAt]
+      properties:
+        id:
+          type: string
+        role:
+          type: string
+          enum: [user, assistant]
+        content:
+          type: string
+        responsePayload:
+          type: ["object", "null"]
+          additionalProperties: true
+        createdAt:
+          type: string
+    ChatThreadDetail:
+      type: object
+      required: [id, messages]
+      properties:
+        id:
+          type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChatMessage"
+    ChatTurnInput:
+      type: object
+      required: [userText, assistantPayload]
+      properties:
+        userText:
+          type: string
+        assistantPayload:
+          type: object
+          additionalProperties: true
+
+    AdminOverview:
+      type: object
+      required:
+        - documentsTotal
+        - activeDocuments
+        - usersTotal
+        - adminsTotal
+        - donationsTotal
+        - donationsCount
+        - trainingRowsTotal
+        - recentUsers
+        - recentDonations
+      properties:
+        documentsTotal:
+          type: integer
+        activeDocuments:
+          type: integer
+        usersTotal:
+          type: integer
+        adminsTotal:
+          type: integer
+        donationsTotal:
+          type: integer
+        donationsCount:
+          type: integer
+        trainingRowsTotal:
+          type: integer
+        recentUsers:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminUserSummary"
+        recentDonations:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminDonationSummary"
+    AdminUserSummary:
+      type: object
+      required: [id, email, name, role, createdAt]
+      properties:
+        id:
+          type: string
+        email:
+          type: ["string", "null"]
+        name:
+          type: ["string", "null"]
+        role:
+          type: string
+        createdAt:
+          type: string
+    AdminDonationSummary:
+      type: object
+      required: [eventId, amountCents, createdAt]
+      properties:
+        eventId:
+          type: string
+        amountCents:
+          type: ["integer", "null"]
+        createdAt:
+          type: string
+
+    AdminDocumentVersion:
+      type: object
+      required: [id, originalFilename, status, fileSizeBytes, uploadedAt]
+      properties:
+        id:
+          type: string
+        originalFilename:
+          type: string
+        status:
+          type: string
+        fileSizeBytes:
+          type: integer
+        uploadedAt:
+          type: string
+    AdminIngestionJob:
+      type: object
+      required: [id, status, progress, errorMessage]
+      properties:
+        id:
+          type: string
+        status:
+          type: string
+        progress:
+          type: integer
+        errorMessage:
+          type: ["string", "null"]
+    AdminDocument:
+      type: object
+      required: [id, title, status, createdAt, currentVersion, latestJob]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        status:
+          type: string
+        createdAt:
+          type: string
+        currentVersion:
+          oneOf:
+            - $ref: "#/components/schemas/AdminDocumentVersion"
+            - type: "null"
+        latestJob:
+          oneOf:
+            - $ref: "#/components/schemas/AdminIngestionJob"
+            - type: "null"
+    AdminDocumentList:
+      type: object
+      required: [documents]
+      properties:
+        documents:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminDocument"
+    AdminDocumentAction:
+      type: object
+      required: [action]
+      properties:
+        action:
+          type: string
+          enum: [retry, activate, deactivate, delete]
+    DocumentUploadInput:
+      type: object
+      required: [file]
+      properties:
+        file:
+          type: string
+          format: binary
+    DocumentUploadResult:
+      type: object
+      required: [documentId, versionId, jobId, ingestionStatus]
+      properties:
+        documentId:
+          type: string
+        versionId:
+          type: string
+        jobId:
+          type: string
+        ingestionStatus:
+          type: string
+
+    AdminMaintenanceJob:
+      type: object
+      required: [id, action, status, requestedBy, startedAt, finishedAt, logs, error]
+      properties:
+        id:
+          type: string
+        action:
+          type: string
+        status:
+          type: string
+          enum: [running, succeeded, failed]
+        requestedBy:
+          type: string
+        startedAt:
+          type: string
+        finishedAt:
+          type: ["string", "null"]
+        logs:
+          type: array
+          items:
+            type: string
+        error:
+          type: ["string", "null"]
+    AdminMaintenanceStatus:
+      type: object
+      required: [activeJob, history]
+      properties:
+        activeJob:
+          oneOf:
+            - $ref: "#/components/schemas/AdminMaintenanceJob"
+            - type: "null"
+        history:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminMaintenanceJob"
+    AdminMaintenanceInput:
+      type: object
+      required: [action]
+      properties:
+        action:
+          type: string
+          enum: [refresh-knowledge-index, refresh-training-dataset, refresh-all]
+    AdminMaintenanceStartResult:
+      type: object
+      required: [started]
+      properties:
+        started:
+          type: boolean
+        activeJob:
+          oneOf:
+            - $ref: "#/components/schemas/AdminMaintenanceJob"
+            - type: "null"
+
+    TrainingRecord:
+      type: object
+      required: [id, sheet, row, question, answer]
+      properties:
+        id:
+          type: integer
+        sheet:
+          type: string
+        row:
+          type: integer
+        question:
+          type: string
+        answer:
+          type: string
+    AdminTrainingList:
+      type: object
+      required: [records, total]
+      properties:
+        records:
+          type: array
+          items:
+            $ref: "#/components/schemas/TrainingRecord"
+        total:
+          type: integer
+    TrainingRecordInput:
+      type: object
+      required: [question, answer]
+      properties:
+        question:
+          type: string
+        answer:
+          type: string
+
+    DonationInput:
+      type: object
+      properties:
+        amount:
+          type: number
+    DonationCheckout:
+      type: object
+      properties:
+        url:
+          type: ["string", "null"]
+
+    VoiceUploadInput:
+      type: object
+      required: [audio]
+      properties:
+        audio:
+          type: string
+          format: binary
+    TranscriptionResult:
+      type: object
+      required: [transcript, language, confidence]
+      properties:
+        transcript:
+          type: string
+        language:
+          type: string
+          enum: [en, bn, unknown]
+        confidence:
+          type: ["number", "null"]

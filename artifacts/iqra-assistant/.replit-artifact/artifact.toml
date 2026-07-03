@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "IQRA Assistant"
+version = "1.0.0"
+id = "artifacts/iqra-assistant"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23187
+
+[services.development]
+run = "pnpm --filter @workspace/iqra-assistant run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/iqra-assistant", "run", "build" ]
+publicDir = "artifacts/iqra-assistant/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23187"
+BASE_PATH = "/"

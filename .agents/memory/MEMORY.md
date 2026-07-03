@@ -1,0 +1,2 @@
+- [Express API server esbuild build](api-server-esbuild-build.md) — esbuild only bundles JS; non-JS runtime assets (SQL migrations, data files) must be explicitly copied into dist.
+- [Orval react-query hook option typing](orval-query-option-typing.md) — generated hooks sometimes report `queryKey` as required even though it's injected internally; cast the options object, don't try to satisfy the type.
