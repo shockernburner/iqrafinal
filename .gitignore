@@ -1,19 +1,49 @@
-# OS junk
+# See https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
+
+# compiled output
+dist
+tmp
+out-tsc
+*.tsbuildinfo
+.expo
+.expo-shared
+
+# dependencies
+node_modules
+
+# IDEs and editors
+/.idea
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# IDE - VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# misc
+/.sass-cache
+/connect.lock
+/coverage
+/libpeerconnection.log
+npm-debug.log
+yarn-error.log
+testem.log
+/typings
+
+# System Files
 .DS_Store
+Thumbs.db
 
-# Local acceptance input kept outside version control by default
-Questions to ask for getting results.docx
-1- 500 training_questions (1).xlsx
-IQRA - all final/
+.cursor/rules/nx-rules.mdc
+.github/instructions/nx.instructions.md
 
-# Safety: never commit local tunnel/runtime artefacts
-*.log
-*.pid
-*.tmp
-*.temp
-*.swp
-*.swo
-
-# Local helper outputs
-copilot-terminal-output-*.txt
-chat-session-resources/
+# Replit
+.cache/
+.local/

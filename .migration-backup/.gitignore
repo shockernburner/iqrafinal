@@ -1,0 +1,19 @@
+# OS junk
+.DS_Store
+
+# Local acceptance input kept outside version control by default
+Questions to ask for getting results.docx
+1- 500 training_questions (1).xlsx
+IQRA - all final/
+
+# Safety: never commit local tunnel/runtime artefacts
+*.log
+*.pid
+*.tmp
+*.temp
+*.swp
+*.swo
+
+# Local helper outputs
+copilot-terminal-output-*.txt
+chat-session-resources/
