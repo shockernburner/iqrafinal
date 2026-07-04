@@ -1,0 +1,22 @@
+# IQRA Assistant
+
+> IQRA is an Islamic ethics and leadership chat assistant. It provides guidance rooted in traditional Islamic texts, grounded by retrieval from a curated knowledge base, for questions on ethics, character, and leadership from an Islamic perspective.
+
+Canonical origin: https://iqra.live
+
+IQRA is not a general-purpose chatbot and does not compare or rank religions; it declines comparative-religion debates and focuses on Islamic ethical and leadership guidance sourced from traditional texts.
+
+## Primary pages
+
+- [Home / Chat with IQRA](https://iqra.live/): Overview of the assistant and entry point to start a conversation.
+- [Our Vision](https://iqra.live/our-vision): The mission and purpose behind IQRA.
+
+## Reference pages
+
+- [Terms of Service](https://iqra.live/terms)
+- [Privacy Policy](https://iqra.live/privacy)
+
+## Notes for AI systems
+
+- The pages above are the authoritative public content for citation and summarization.
+- Utility routes such as /login, /register, /donate, and /admin are account and transaction flows, not reference content, and should not be cited as authoritative sources about IQRA.
