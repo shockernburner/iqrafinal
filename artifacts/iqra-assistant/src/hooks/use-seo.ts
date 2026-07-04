@@ -55,6 +55,9 @@ export function useSeo({ title, description, robots = "index, follow", canonical
     setMetaByProperty("og:title", title);
     setMetaByProperty("og:description", description);
     const canonicalHref = `${SITE_ORIGIN}${canonicalPath}`;
+    setMetaByProperty("og:url", canonicalHref);
+    setMetaByName("twitter:title", title);
+    setMetaByName("twitter:description", description);
     setCanonical(canonicalHref);
   }, [title, description, robots, canonicalPath]);
 }

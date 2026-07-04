@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import logoPng from "@/assets/logo.png";
 import { BookOpen, Compass, ShieldCheck } from "lucide-react";
 import { useSeo } from "@/hooks/use-seo";
+import { HomeStructuredData } from "@/components/structured-data";
 
 const PILLARS = [
   {
@@ -34,6 +35,7 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen bg-background">
+      <HomeStructuredData />
       <header className="flex items-center justify-between max-w-5xl mx-auto px-6 py-6">
         <div className="flex items-center gap-3">
           <img src={logoPng} alt="IQRA Assistant" className="w-9 h-9 rounded-md shadow-sm" />

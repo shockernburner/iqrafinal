@@ -61,6 +61,10 @@ function injectIntoTemplate(template, { html, title, description, robots, canoni
     `<meta property="og:description" content="${description}" />`,
   );
   out = out.replace(
+    /<meta property="og:url" content=".*?" \/>/,
+    `<meta property="og:url" content="${canonicalHref}" />`,
+  );
+  out = out.replace(
     /<meta name="twitter:title" content=".*?" \/>/,
     `<meta name="twitter:title" content="${title}" />`,
   );
