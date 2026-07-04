@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { AppLayout } from "@/components/layout";
-import { useLocation } from "wouter";
+import { useLocation, useSearch } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { 
   useGetChat, 
@@ -24,10 +24,11 @@ function getInitials(name?: string | null, email?: string | null): string {
 }
 
 export default function Chat() {
-  const [location, setLocation] = useLocation();
+  const [, setLocation] = useLocation();
+  const search = useSearch();
   const { user } = useAuth();
   const userInitials = getInitials(user?.name, user?.email);
-  const searchParams = new URLSearchParams(window.location.search);
+  const searchParams = new URLSearchParams(search);
   const chatId = searchParams.get("chatId");
   
   const [input, setInput] = useState("");

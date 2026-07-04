@@ -1,5 +1,5 @@
 import { ReactNode, useEffect, useState } from "react";
-import { Link, useLocation } from "wouter";
+import { Link, useLocation, useSearch } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { LogOut, LayoutDashboard, MessageSquare, Heart, Settings, Plus, Loader2, Menu, X, FileText, Shield, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const { user, logout } = useAuth();
-  const [location, setLocation] = useLocation();
+  const [, setLocation] = useLocation();
+  const search = useSearch();
+  const activeChatId = new URLSearchParams(search).get("chatId");
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const { data: chatsData, isLoading: isLoadingChats } = useListChats({
@@ -102,7 +104,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
               <Button
                 key={thread.id}
                 variant="ghost"
-                className={`w-full justify-start font-normal text-sm px-3 h-9 ${location.includes(thread.id) ? 'bg-sidebar-accent text-sidebar-accent-foreground' : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'}`}
+                className={`w-full justify-start font-normal text-sm px-3 h-9 ${activeChatId === thread.id ? 'bg-sidebar-accent text-sidebar-accent-foreground' : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'}`}
                 onClick={() => navigate(`/?chatId=${thread.id}`)}
               >
                 <MessageSquare className="w-4 h-4 mr-2 opacity-70" />
