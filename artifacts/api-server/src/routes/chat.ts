@@ -9,15 +9,21 @@ import {
   StartChatJobResponse,
 } from "@workspace/api-zod";
 import { attachUser, requireUser } from "../lib/auth";
-import { generateIqraChatResponse } from "../lib/chat";
+import { generateIqraChatResponse, type ChatApiPayload } from "../lib/chat";
+import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
 
-router.post("/chat", attachUser, requireUser, (req, res) => {
+router.post("/chat", attachUser, requireUser, async (req, res) => {
   const body = SendChatBody.parse(req.body);
-  const response = generateIqraChatResponse(body.prompt);
-  const data = SendChatResponse.parse(response);
-  res.json(data);
+  try {
+    const response = await generateIqraChatResponse(body.prompt);
+    const data = SendChatResponse.parse(response);
+    res.json(data);
+  } catch (err) {
+    logger.error({ err }, "Chat generation failed");
+    res.status(502).json({ error: "The assistant could not generate a response. Please try again." });
+  }
 });
 
 type AsyncJob = {
@@ -27,7 +33,7 @@ type AsyncJob = {
   attempt: number;
   lastConfidence?: "high" | "medium" | "low" | null;
   error?: string | null;
-  response?: ReturnType<typeof generateIqraChatResponse>;
+  response?: ChatApiPayload;
 };
 
 const jobs = new Map<string, AsyncJob>();
@@ -38,13 +44,20 @@ router.post("/chat/async", attachUser, requireUser, (req, res) => {
   const job: AsyncJob = { jobId, status: "running", stage: "Thinking", attempt: 1 };
   jobs.set(jobId, job);
 
-  setTimeout(() => {
-    const response = generateIqraChatResponse(body.prompt);
-    job.status = "completed";
-    job.stage = "Complete";
-    job.lastConfidence = response.confidence ?? "medium";
-    job.response = response;
-  }, 600);
+  void (async () => {
+    try {
+      const response = await generateIqraChatResponse(body.prompt);
+      job.status = "completed";
+      job.stage = "Complete";
+      job.lastConfidence = response.confidence ?? "medium";
+      job.response = response;
+    } catch (err) {
+      logger.error({ err }, "Async chat generation failed");
+      job.status = "failed";
+      job.stage = "Failed";
+      job.error = "The assistant could not generate a response.";
+    }
+  })();
 
   const data = StartChatJobResponse.parse({
     jobId: job.jobId,

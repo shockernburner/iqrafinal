@@ -151,6 +151,32 @@ export default function Chat() {
                     ) : (
                       <div className="markdown-content">
                         <ReactMarkdown>{msg.content}</ReactMarkdown>
+                        {(() => {
+                          const confidence = (msg.responsePayload as Record<string, unknown> | null)?.confidence;
+                          if (confidence === "medium" || confidence === "low") {
+                            return (
+                              <div className="mt-3 pt-3 border-t border-border/40 flex items-center gap-2 not-prose">
+                                <span
+                                  className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${
+                                    confidence === "low"
+                                      ? "bg-destructive/10 text-destructive"
+                                      : "bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                                  }`}
+                                  data-testid="badge-confidence"
+                                >
+                                  <span className="w-1.5 h-1.5 rounded-full bg-current" />
+                                  {confidence === "low" ? "Low confidence" : "Moderate confidence"}
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  {confidence === "low"
+                                    ? "Verify with a qualified scholar."
+                                    : "Not yet fully grounded in the IQRA library."}
+                                </span>
+                              </div>
+                            );
+                          }
+                          return null;
+                        })()}
                       </div>
                     )}
                   </div>
@@ -169,10 +195,13 @@ export default function Chat() {
                 <div className="w-8 h-8 rounded-md bg-primary/10 flex items-center justify-center shrink-0 mt-1">
                   <img src={logoPng} alt="IQRA" className="w-5 h-5 object-contain" />
                 </div>
-                <div className="p-5 rounded-2xl bg-card border border-border/60 shadow-sm rounded-tl-sm text-card-foreground flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-primary/50 animate-bounce" />
-                  <div className="w-2 h-2 rounded-full bg-primary/50 animate-bounce [animation-delay:-0.15s]" />
-                  <div className="w-2 h-2 rounded-full bg-primary/50 animate-bounce [animation-delay:-0.3s]" />
+                <div className="p-5 rounded-2xl bg-card border border-border/60 shadow-sm rounded-tl-sm text-card-foreground flex items-center gap-3" data-testid="indicator-thinking">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-primary/50 animate-bounce" />
+                    <div className="w-2 h-2 rounded-full bg-primary/50 animate-bounce [animation-delay:-0.15s]" />
+                    <div className="w-2 h-2 rounded-full bg-primary/50 animate-bounce [animation-delay:-0.3s]" />
+                  </div>
+                  <span className="text-sm text-muted-foreground">Thinking — consulting the sources…</span>
                 </div>
               </div>
             )}
