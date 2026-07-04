@@ -1,21 +1,33 @@
 import { useState, useRef, useEffect } from "react";
 import { AppLayout } from "@/components/layout";
 import { useLocation } from "wouter";
+import { useAuth } from "@/hooks/use-auth";
 import { 
   useGetChat, 
   useAppendChatTurn, 
   useCreateChat,
   useSendChat 
 } from "@workspace/api-client-react";
-import { Send, User, Loader2 } from "lucide-react";
+import { Send, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import logoPng from "@/assets/logo.png";
+import logoIconPng from "@/assets/logo-icon.png";
 import ReactMarkdown from "react-markdown";
+
+function getInitials(name?: string | null, email?: string | null): string {
+  const source = (name && name.trim()) || (email ? email.split("@")[0] : "");
+  if (!source) return "U";
+  const words = source.trim().split(/\s+/).filter(Boolean);
+  const initials = words.map((w) => w[0]!.toUpperCase()).join("");
+  return initials.slice(0, 3) || source[0]!.toUpperCase();
+}
 
 export default function Chat() {
   const [location, setLocation] = useLocation();
+  const { user } = useAuth();
+  const userInitials = getInitials(user?.name, user?.email);
   const searchParams = new URLSearchParams(window.location.search);
   const chatId = searchParams.get("chatId");
   
@@ -97,7 +109,7 @@ export default function Chat() {
             
             {!chatId && (
               <div className="flex flex-col items-center justify-center h-[50vh] text-center space-y-6 opacity-80">
-                <img src={logoPng} alt="IQRA" className="w-16 h-16 rounded-md opacity-80" />
+                <img src={logoIconPng} alt="IQRA" className="w-16 h-16 object-contain opacity-80" />
                 <h2 className="font-serif text-3xl text-foreground">Seek knowledge from the cradle to the grave.</h2>
                 <p className="text-muted-foreground max-w-md">
                   Ask questions about Islamic ethics, seek guidance on dilemmas, or explore teachings from traditional scholarship.
@@ -182,8 +194,8 @@ export default function Chat() {
                   </div>
                   
                   {msg.role === "user" && (
-                    <div className="w-8 h-8 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center shrink-0 mt-1">
-                      <User className="w-4 h-4" />
+                    <div className="w-8 h-8 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center shrink-0 mt-1 text-xs font-semibold tracking-tight" aria-label={user?.name || "User"}>
+                      {userInitials}
                     </div>
                   )}
                 </div>
