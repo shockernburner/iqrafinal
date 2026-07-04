@@ -49,6 +49,8 @@ import type {
   ReadinessStatus,
   RegisterInput,
   Session,
+  TrainingDatasetUploadInput,
+  TrainingDatasetUploadResult,
   TrainingRecordInput,
   TranscriptionResult,
   VoiceUploadInput
@@ -1407,6 +1409,78 @@ export const useUploadAdminDocument = <TError = ErrorType<ErrorResponse>,
         TContext
       > => {
       return useMutation(getUploadAdminDocumentMutationOptions(options));
+    }
+
+export const getUploadAdminTrainingDatasetUrl = () => {
+
+
+
+
+  return `/api/admin/training/upload`
+}
+
+/**
+ * @summary Bulk upload a training dataset (Excel .xlsx or .csv)
+ */
+export const uploadAdminTrainingDataset = async (trainingDatasetUploadInput: TrainingDatasetUploadInput, options?: RequestInit): Promise<TrainingDatasetUploadResult> => {
+    const formData = new FormData();
+formData.append(`file`, trainingDatasetUploadInput.file);
+
+  return customFetch<TrainingDatasetUploadResult>(getUploadAdminTrainingDatasetUrl(),
+  {
+    ...options,
+    method: 'POST'
+    ,
+    body: formData
+  }
+);}
+
+
+
+
+export const getUploadAdminTrainingDatasetMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof uploadAdminTrainingDataset>>, TError,{data: BodyType<TrainingDatasetUploadInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof uploadAdminTrainingDataset>>, TError,{data: BodyType<TrainingDatasetUploadInput>}, TContext> => {
+
+const mutationKey = ['uploadAdminTrainingDataset'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof uploadAdminTrainingDataset>>, {data: BodyType<TrainingDatasetUploadInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  uploadAdminTrainingDataset(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UploadAdminTrainingDatasetMutationResult = NonNullable<Awaited<ReturnType<typeof uploadAdminTrainingDataset>>>
+    export type UploadAdminTrainingDatasetMutationBody = BodyType<TrainingDatasetUploadInput>
+    export type UploadAdminTrainingDatasetMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Bulk upload a training dataset (Excel .xlsx or .csv)
+ */
+export const useUploadAdminTrainingDataset = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof uploadAdminTrainingDataset>>, TError,{data: BodyType<TrainingDatasetUploadInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof uploadAdminTrainingDataset>>,
+        TError,
+        {data: BodyType<TrainingDatasetUploadInput>},
+        TContext
+      > => {
+      return useMutation(getUploadAdminTrainingDatasetMutationOptions(options));
     }
 
 export const getGetAdminMaintenanceUrl = () => {

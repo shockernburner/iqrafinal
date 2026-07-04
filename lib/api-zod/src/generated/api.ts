@@ -314,6 +314,20 @@ export const UploadAdminDocumentResponse = zod.object({
 
 
 /**
+ * @summary Bulk upload a training dataset (Excel .xlsx or .csv)
+ */
+export const UploadAdminTrainingDatasetBody = zod.object({
+  "file": zod.instanceof(File)
+})
+
+export const UploadAdminTrainingDatasetResponse = zod.object({
+  "added": zod.number(),
+  "skipped": zod.number(),
+  "total": zod.number()
+})
+
+
+/**
  * @summary Get the current maintenance job status
  */
 export const GetAdminMaintenanceResponse = zod.object({

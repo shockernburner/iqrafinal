@@ -98,6 +98,47 @@ export async function addTrainingRecord(question: string, answer: string): Promi
   return { id: row.id, sheet: row.sheet, row: row.row_num, question: row.question, answer: row.answer };
 }
 
+export async function bulkAddTrainingRecords(
+  rows: Array<{ question: string; answer: string }>,
+  sheet: string,
+): Promise<number> {
+  await ensureSeeded();
+  const clean = rows
+    .map((r) => ({ question: r.question.trim(), answer: r.answer.trim() }))
+    .filter((r) => r.question.length > 0 && r.answer.length > 0);
+  if (clean.length === 0) return 0;
+
+  const batchSize = 200;
+  let inserted = 0;
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    for (let i = 0; i < clean.length; i += batchSize) {
+      const batch = clean.slice(i, i + batchSize);
+      const values: unknown[] = [];
+      const placeholders = batch
+        .map((record, idx) => {
+          const base = idx * 4;
+          values.push(sheet, i + idx + 1, record.question, record.answer);
+          return `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4})`;
+        })
+        .join(", ");
+      await client.query(
+        `INSERT INTO training_records (sheet, row_num, question, answer) VALUES ${placeholders}`,
+        values,
+      );
+      inserted += batch.length;
+    }
+    await client.query("COMMIT");
+  } catch (err) {
+    await client.query("ROLLBACK").catch(() => undefined);
+    throw err;
+  } finally {
+    client.release();
+  }
+  return inserted;
+}
+
 export async function findRelevantTrainingRecords(query: string, limit = 3): Promise<TrainingRecord[]> {
   await ensureSeeded();
   const result = await pool.query<{

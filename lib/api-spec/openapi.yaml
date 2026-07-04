@@ -496,6 +496,42 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /admin/training/upload:
+    post:
+      operationId: uploadAdminTrainingDataset
+      tags: [admin]
+      summary: Bulk upload a training dataset (Excel .xlsx or .csv)
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/TrainingDatasetUploadInput"
+      responses:
+        "200":
+          description: Dataset imported
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainingDatasetUploadResult"
+        "400":
+          description: Invalid upload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Admin only
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /admin/maintenance:
     get:
       operationId: getAdminMaintenance
@@ -1165,6 +1201,23 @@ components:
           type: string
         answer:
           type: string
+    TrainingDatasetUploadInput:
+      type: object
+      required: [file]
+      properties:
+        file:
+          type: string
+          format: binary
+    TrainingDatasetUploadResult:
+      type: object
+      required: [added, skipped, total]
+      properties:
+        added:
+          type: integer
+        skipped:
+          type: integer
+        total:
+          type: integer
 
     DonationInput:
       type: object

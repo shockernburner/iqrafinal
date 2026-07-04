@@ -9,7 +9,8 @@ import {
   useUploadAdminDocument,
   useUpdateAdminDocument,
   useStartAdminMaintenance,
-  useAddAdminTraining
+  useAddAdminTraining,
+  useUploadAdminTrainingDataset
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -73,6 +74,20 @@ export default function AdminDashboard() {
     }
   });
 
+  const uploadDataset = useUploadAdminTrainingDataset({
+    mutation: {
+      onSuccess: (result) => {
+        toast({
+          title: "Training dataset uploaded",
+          description: `Added ${result.added} record${result.added === 1 ? "" : "s"} for all users${result.skipped > 0 ? `; skipped ${result.skipped} incomplete row${result.skipped === 1 ? "" : "s"}` : ""}.`,
+        });
+        queryClient.invalidateQueries({ queryKey: ["/api/admin/training"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/admin/overview"] });
+      },
+      onError: (err: any) => toast({ title: "Upload failed", description: err?.error, variant: "destructive" })
+    }
+  });
+
   // Upload state
   const [file, setFile] = useState<File | null>(null);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
@@ -81,6 +96,8 @@ export default function AdminDashboard() {
   const [newQuestion, setNewQuestion] = useState("");
   const [newAnswer, setNewAnswer] = useState("");
   const [isTrainingOpen, setIsTrainingOpen] = useState(false);
+  const [datasetFile, setDatasetFile] = useState<File | null>(null);
+  const [isDatasetOpen, setIsDatasetOpen] = useState(false);
 
   const handleUpload = () => {
     if (!file) return;
@@ -95,6 +112,13 @@ export default function AdminDashboard() {
     setIsTrainingOpen(false);
     setNewQuestion("");
     setNewAnswer("");
+  };
+
+  const handleUploadDataset = () => {
+    if (!datasetFile) return;
+    uploadDataset.mutate({ data: { file: datasetFile } });
+    setIsDatasetOpen(false);
+    setDatasetFile(null);
   };
 
   return (
@@ -262,6 +286,35 @@ export default function AdminDashboard() {
                     <CardTitle>Training Sets</CardTitle>
                     <CardDescription>Questions and expected answers used to tune behavior.</CardDescription>
                   </div>
+                  <div className="flex gap-2">
+                  <Dialog open={isDatasetOpen} onOpenChange={setIsDatasetOpen}>
+                    <DialogTrigger asChild>
+                      <Button size="sm" variant="outline"><Upload className="w-4 h-4 mr-2" /> Upload Dataset</Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Upload Training Dataset</DialogTitle>
+                        <DialogDescription>
+                          Upload an Excel (.xlsx) or CSV file with a "question" column and an "answer" column. Rows are added to the shared training set used for every user.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="py-4 space-y-2">
+                        <Label>Dataset file (.xlsx or .csv)</Label>
+                        <Input
+                          type="file"
+                          accept=".xlsx,.csv"
+                          onChange={(e) => setDatasetFile(e.target.files?.[0] ?? null)}
+                        />
+                      </div>
+                      <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsDatasetOpen(false)}>Cancel</Button>
+                        <Button onClick={handleUploadDataset} disabled={!datasetFile || uploadDataset.isPending}>
+                          {uploadDataset.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                          Upload
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
                   <Dialog open={isTrainingOpen} onOpenChange={setIsTrainingOpen}>
                     <DialogTrigger asChild>
                       <Button size="sm"><Plus className="w-4 h-4 mr-2" /> Add Record</Button>
@@ -298,6 +351,7 @@ export default function AdminDashboard() {
                       </DialogFooter>
                     </DialogContent>
                   </Dialog>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   {isLoadingTraining ? (

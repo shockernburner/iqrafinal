@@ -1,5 +1,7 @@
+import { Readable } from "node:stream";
 import { Router, type IRouter } from "express";
 import multer from "multer";
+import ExcelJS from "exceljs";
 import { pool } from "@workspace/db";
 import {
   AddAdminTrainingBody,
@@ -15,14 +17,71 @@ import {
   UpdateAdminDocumentParams,
   UpdateAdminDocumentResponse,
   UploadAdminDocumentResponse,
+  UploadAdminTrainingDatasetResponse,
 } from "@workspace/api-zod";
 import { attachUser, requireAdmin } from "../lib/auth";
 import { getAdminMaintenanceStatus, startAdminMaintenance } from "../lib/admin-maintenance";
 import { storeKnowledgeUpload } from "../lib/knowledge-upload";
-import { addTrainingRecord, loadTrainingRecords } from "../lib/training-data";
+import { addTrainingRecord, bulkAddTrainingRecords, loadTrainingRecords } from "../lib/training-data";
 
 const router: IRouter = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
+
+function sanitizeSheetName(filename: string): string {
+  const base = filename.replace(/\.[^.]+$/, "").replace(/[^a-zA-Z0-9_-]+/g, "_").slice(0, 60);
+  return base.length > 0 ? base : "upload";
+}
+
+const QUESTION_HEADER = /quest|prompt|^q$|input/i;
+const ANSWER_HEADER = /answ|response|expected|output|^a$/i;
+
+function pickColumns(header: string[]): { q: number; a: number } {
+  let q = header.findIndex((h) => QUESTION_HEADER.test(h));
+  let a = header.findIndex((h) => ANSWER_HEADER.test(h));
+  // Fall back to positional (first two columns) when headers aren't recognizable.
+  if (q === -1 && a === -1) return { q: 0, a: 1 };
+  if (q === -1) q = a === 0 ? 1 : 0;
+  if (a === -1) a = q === 0 ? 1 : 0;
+  return { q, a };
+}
+
+async function parseTrainingDataset(
+  file: Express.Multer.File,
+): Promise<Array<{ question: string; answer: string }>> {
+  const workbook = new ExcelJS.Workbook();
+  const isCsv = /\.csv$/i.test(file.originalname) || file.mimetype === "text/csv";
+  // Use exceljs's stream API for both formats: its buffer-based `load()` typing
+  // predates @types/node's generic Buffer and is nominally incompatible.
+  if (isCsv) {
+    await workbook.csv.read(Readable.from(file.buffer.toString("utf8")));
+  } else {
+    await workbook.xlsx.read(Readable.from(file.buffer));
+  }
+
+  const sheet = workbook.worksheets[0];
+  if (!sheet) return [];
+
+  const matrix: string[][] = [];
+  sheet.eachRow((row) => {
+    const cells: string[] = [];
+    row.eachCell({ includeEmpty: true }, (cell) => {
+      cells.push(cell.text?.toString().trim() ?? "");
+    });
+    matrix.push(cells);
+  });
+  if (matrix.length === 0) return [];
+
+  // Detect whether the first row is a header (contains recognizable column names).
+  const first = matrix[0];
+  const hasHeader = first.some((h) => QUESTION_HEADER.test(h) || ANSWER_HEADER.test(h));
+  const { q, a } = pickColumns(hasHeader ? first : []);
+  const dataRows = hasHeader ? matrix.slice(1) : matrix;
+
+  return dataRows.map((cells) => ({
+    question: cells[q] ?? "",
+    answer: cells[a] ?? "",
+  }));
+}
 
 router.use(attachUser, requireAdmin);
 
@@ -235,6 +294,37 @@ router.post("/training", async (req, res) => {
   await addTrainingRecord(body.question, body.answer);
   const data = AddAdminTrainingResponse.parse({ ok: true });
   res.status(201).json(data);
+});
+
+router.post("/training/upload", upload.single("file"), async (req, res) => {
+  if (!req.file) {
+    res.status(400).json({ error: "A file is required." });
+    return;
+  }
+
+  let rows: Array<{ question: string; answer: string }>;
+  try {
+    rows = await parseTrainingDataset(req.file);
+  } catch {
+    res.status(400).json({ error: "Could not read the file. Upload a valid .xlsx or .csv." });
+    return;
+  }
+
+  if (rows.length === 0) {
+    res.status(400).json({
+      error: "No rows found. The file needs a 'question' column and an 'answer' column.",
+    });
+    return;
+  }
+
+  const sheet = sanitizeSheetName(req.file.originalname);
+  const added = await bulkAddTrainingRecords(rows, sheet);
+  const data = UploadAdminTrainingDatasetResponse.parse({
+    added,
+    skipped: rows.length - added,
+    total: rows.length,
+  });
+  res.json(data);
 });
 
 export default router;

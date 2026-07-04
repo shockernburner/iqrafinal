@@ -60,6 +60,8 @@ export * from './readinessStatusChecks';
 export * from './registerInput';
 export * from './session';
 export * from './sourceLink';
+export * from './trainingDatasetUploadInput';
+export * from './trainingDatasetUploadResult';
 export * from './trainingRecord';
 export * from './trainingRecordInput';
 export * from './transcriptionResult';

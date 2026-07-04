@@ -392,6 +392,16 @@ export interface TrainingRecordInput {
   answer: string;
 }
 
+export interface TrainingDatasetUploadInput {
+  file: Blob;
+}
+
+export interface TrainingDatasetUploadResult {
+  added: number;
+  skipped: number;
+  total: number;
+}
+
 export interface DonationInput {
   amount?: number;
 }
