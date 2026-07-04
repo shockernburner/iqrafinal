@@ -8,7 +8,7 @@ import {
   useCreateChat,
   useSendChat 
 } from "@workspace/api-client-react";
-import { Send, Loader2 } from "lucide-react";
+import { Send, Loader2, Copy, Check, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -32,7 +32,32 @@ export default function Chat() {
   const chatId = searchParams.get("chatId");
   
   const [input, setInput] = useState("");
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const handleCopy = async (text: string, id: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedId(id);
+      setTimeout(() => setCopiedId((c) => (c === id ? null : c)), 2000);
+    } catch {
+      // Clipboard unavailable (e.g. insecure context); silently ignore.
+    }
+  };
+
+  const handleShare = async (text: string) => {
+    try {
+      if (typeof navigator !== "undefined" && navigator.share) {
+        await navigator.share({ title: "IQRA Assistant", text });
+      } else {
+        await navigator.clipboard.writeText(text);
+        setCopiedId("share-fallback");
+        setTimeout(() => setCopiedId((c) => (c === "share-fallback" ? null : c)), 2000);
+      }
+    } catch {
+      // User cancelled the share sheet or sharing is unavailable; ignore.
+    }
+  };
   
   const { data: chatData, isLoading: isLoadingChat } = useGetChat(
     chatId as string, 
@@ -188,6 +213,39 @@ export default function Chat() {
                           }
                           return null;
                         })()}
+                      </div>
+                    )}
+
+                    {msg.role === "assistant" && (
+                      <div className="mt-3 pt-3 border-t border-border/40 flex items-center gap-1 not-prose">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground gap-1.5"
+                          onClick={() => handleCopy(msg.content, msg.id ?? String(i))}
+                          aria-label="Copy response"
+                          data-testid="button-copy-response"
+                        >
+                          {copiedId === (msg.id ?? String(i)) ? (
+                            <>
+                              <Check className="w-3.5 h-3.5" /> Copied
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3.5 h-3.5" /> Copy
+                            </>
+                          )}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground gap-1.5"
+                          onClick={() => handleShare(msg.content)}
+                          aria-label="Share response"
+                          data-testid="button-share-response"
+                        >
+                          <Share2 className="w-3.5 h-3.5" /> Share
+                        </Button>
                       </div>
                     )}
                   </div>
