@@ -26,3 +26,4 @@ channel = "stable-25_05"
 [userenv.shared]
 RESEND_FROM_WELCOME_EMAIL = "welcome@iqra.live"
 RESEND_FROM_DONATION_EMAIL = "thanks@iqra.live"
+RESEND_FROM_PASSWORD_RESET = "Password Reset <reset-password@iqra.live>"
