@@ -16,6 +16,7 @@ An Islamic ethics and leadership chat assistant: users register/login, chat with
 - Optional env: `RESEND_API_KEY`, `RESEND_FROM_WELCOME_EMAIL`, `RESEND_FROM_DONATION_EMAIL` — enable transactional emails (welcome on register, thank-you on donation); missing config logs a warning and skips the send (best-effort, never blocks the request)
 - Object storage (Replit App Storage / GCS) is required for knowledge uploads: `PRIVATE_OBJECT_DIR`, `DEFAULT_OBJECT_STORAGE_BUCKET_ID`, `PUBLIC_OBJECT_SEARCH_PATHS` (provisioned via `setupObjectStorage()`)
 - Create/promote an admin user: `cd artifacts/api-server && npx tsx src/scripts/create-admin.ts <email> <password> [name]`
+- Batch-evaluate + retrain from a question list: `cd artifacts/api-server && npx tsx src/scripts/retrain-from-questions.ts <stateFile> [timeBudgetSeconds]` — resumable; tests each question, and for any answer below "high" confidence persists the generated answer as a `training_records` few-shot example, then retests. "Retraining" here means enriching the few-shot bank — there is NO model fine-tuning.
 
 ## Stack
 
