@@ -130,6 +130,13 @@ globalThis.__dirname = __bannerPath.dirname(globalThis.__filename);
     path.resolve(distDir, "../data"),
     { recursive: true, force: true },
   ).catch(() => {});
+
+  // pdfjs-dist (used by pdf-parse) loads its worker at runtime relative to the
+  // bundle, so the worker file must be copied next to dist/index.mjs.
+  const pdfParseRequire = createRequire(globalThis.require.resolve("pdf-parse"));
+  const pdfjsEntry = pdfParseRequire.resolve("pdfjs-dist");
+  const pdfWorkerSrc = path.resolve(path.dirname(pdfjsEntry), "pdf.worker.mjs");
+  await cp(pdfWorkerSrc, path.resolve(distDir, "pdf.worker.mjs"));
 }
 
 buildAll().catch((err) => {

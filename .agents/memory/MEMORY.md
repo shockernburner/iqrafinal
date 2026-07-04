@@ -2,6 +2,7 @@
 - [Orval react-query hook option typing](orval-query-option-typing.md) — generated hooks sometimes report `queryKey` as required even though it's injected internally; cast the options object, don't try to satisfy the type.
 - [pdf-parse v2 Node canvas polyfill](pdf-parse-node-canvas-polyfill.md) — pdf-parse v2 needs `@napi-rs/canvas` installed in Node or it crashes with "DOMMatrix is not defined", even for text-only extraction.
 - [Express webhook raw-body scoping](express-webhook-raw-body-scoping.md) — scope `express.raw()` to the exact webhook path, never a shared prefix, or it silently breaks `express.json()` for sibling routes.
+- [FTS with 'simple' tsvector config](simple-fts-retrieval-queries.md) — never pass full questions to websearch/plainto tsquery against a `simple` vector; OR extracted keywords instead or retrieval silently returns nothing.
 - [Workspace TS refs build](workspace-ts-refs-build.md) — new lib package refs need `pnpm exec tsc -b lib/<pkg>` (no build script) or dependents fail with TS6305; `tsx -e` needs an async IIFE (CJS, no top-level await).
 - [Express sub-router mount prefix](express-subrouter-mount-prefix.md) — never bare-mount a sub-router with router-level auth middleware; its middleware runs for ALL paths and 403s unrelated routes.
 - [Replit secrets global scope](replit-secrets-global-scope.md) — secrets are shared dev/prod; a "test-only" key swap hits production on republish, and Autoscale needs a republish to pick up changes.
