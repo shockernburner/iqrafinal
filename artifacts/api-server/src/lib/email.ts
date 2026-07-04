@@ -144,6 +144,36 @@ export async function sendDonationThankYouEmail(to: string, amountCents: number)
   });
 }
 
+export function renderPasswordResetEmailHtml(name: string, resetUrl: string) {
+  return emailLayout({
+      preheader: "Reset your IQRA Assistant password — this link expires in 1 hour.",
+      bodyHtml: `
+        <p style="margin:0 0 16px;">Assalamu alaikum ${escapeHtml(name)},</p>
+        <p style="margin:0 0 16px;">We received a request to reset the password for your IQRA Assistant account. Choose a new password using the button below. For your security, this link expires in one hour.</p>
+        <div style="text-align:center;">${ctaButton("Reset Password", resetUrl)}</div>
+        <p style="margin:24px 0 0;color:#6b6b5f;font-size:14px;">If you didn't request this, you can safely ignore this email — your password will not be changed.</p>
+      `.trim(),
+  });
+}
+
+export async function sendPasswordResetEmail(to: string, name: string, token: string) {
+  const from = process.env.RESEND_FROM_PASSWORD_RESET || process.env.RESEND_FROM_WELCOME_EMAIL;
+  if (!from) {
+    logger.warn(
+      { to },
+      "No password-reset from address (RESEND_FROM_PASSWORD_RESET / RESEND_FROM_WELCOME_EMAIL) set; skipping password reset email",
+    );
+    return;
+  }
+  const resetUrl = `${APP_URL}/reset-password?token=${encodeURIComponent(token)}`;
+  await sendEmail({
+    from,
+    to,
+    subject: "Reset your IQRA Assistant password",
+    html: renderPasswordResetEmailHtml(name, resetUrl),
+  });
+}
+
 function escapeHtml(value: string) {
   return value.replace(/[&<>"']/gu, (char) => {
     switch (char) {

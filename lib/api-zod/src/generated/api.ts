@@ -97,6 +97,35 @@ export const RegisterResponse = zod.object({
 
 
 /**
+ * @summary Request a password reset email
+ */
+export const ForgotPasswordBody = zod.object({
+  "email": zod.string()
+})
+
+export const ForgotPasswordResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+
+/**
+ * @summary Reset a password using a reset token and sign in
+ */
+export const ResetPasswordBody = zod.object({
+  "token": zod.string(),
+  "password": zod.string()
+})
+
+export const ResetPasswordResponse = zod.object({
+  "id": zod.string(),
+  "email": zod.string(),
+  "name": zod.string().nullable(),
+  "role": zod.enum(['user', 'admin']),
+  "legalAccepted": zod.boolean().describe('Whether the user has accepted the current version of the legal documents.')
+})
+
+
+/**
  * @summary Send a prompt and get a synchronous IQRA response
  */
 export const SendChatBody = zod.object({
