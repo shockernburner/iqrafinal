@@ -11,6 +11,9 @@ import Chat from "@/pages/chat";
 import Donate from "@/pages/donate";
 import ThankYou from "@/pages/thank-you";
 import AdminDashboard from "@/pages/admin";
+import Terms from "@/pages/terms";
+import Privacy from "@/pages/privacy";
+import LegalConsent from "@/components/legal-consent";
 
 const queryClient = new QueryClient();
 
@@ -27,6 +30,11 @@ function ProtectedRoute({ component: Component, adminOnly = false }: { component
 
   if (!user) {
     return <Redirect to="/login" />;
+  }
+
+  // Signed-in users must accept the current legal documents before doing anything else.
+  if (!user.legalAccepted) {
+    return <LegalConsent />;
   }
 
   if (adminOnly && user.role !== "admin") {
@@ -52,6 +60,10 @@ function Home() {
     );
   }
 
+  if (user && !user.legalAccepted) {
+    return <LegalConsent />;
+  }
+
   return user ? <Chat /> : <Landing />;
 }
 
@@ -60,6 +72,8 @@ function Router() {
     <Switch>
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
+      <Route path="/terms" component={Terms} />
+      <Route path="/privacy" component={Privacy} />
       
       <Route path="/" component={Home} />
       <Route path="/donate">

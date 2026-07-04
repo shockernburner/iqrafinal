@@ -87,6 +87,11 @@ export default function Landing() {
       </main>
 
       <footer className="border-t border-border/50 py-8">
+        <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground mb-3">
+          <Link href="/privacy" className="hover:text-primary hover:underline">Privacy Policy</Link>
+          <Link href="/terms" className="hover:text-primary hover:underline">Terms of Service</Link>
+          <a href="mailto:contact@iqra.live" className="hover:text-primary hover:underline">Contact</a>
+        </div>
         <p className="text-center text-sm text-muted-foreground">
           &copy; {new Date().getFullYear()} IQRA Assistant
         </p>

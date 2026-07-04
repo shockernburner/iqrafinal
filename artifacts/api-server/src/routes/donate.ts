@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import Stripe from "stripe";
 import { CreateDonationCheckoutBody, CreateDonationCheckoutResponse } from "@workspace/api-zod";
-import { attachUser, requireUser } from "../lib/auth";
+import { attachUser, requireUser, requireLegalAccepted } from "../lib/auth";
 
 const router: IRouter = Router();
 
@@ -11,7 +11,7 @@ function getStripe() {
   return new Stripe(secretKey);
 }
 
-router.post("/donate", attachUser, requireUser, async (req, res) => {
+router.post("/donate", attachUser, requireUser, requireLegalAccepted, async (req, res) => {
   const body = CreateDonationCheckoutBody.parse(req.body);
   const stripe = getStripe();
 

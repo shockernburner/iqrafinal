@@ -2,6 +2,7 @@
 - [Orval react-query hook option typing](orval-query-option-typing.md) — generated hooks sometimes report `queryKey` as required even though it's injected internally; cast the options object, don't try to satisfy the type.
 - [pdf-parse v2 Node canvas polyfill](pdf-parse-node-canvas-polyfill.md) — pdf-parse v2 needs `@napi-rs/canvas` installed in Node or it crashes with "DOMMatrix is not defined", even for text-only extraction.
 - [Express webhook raw-body scoping](express-webhook-raw-body-scoping.md) — scope `express.raw()` to the exact webhook path, never a shared prefix, or it silently breaks `express.json()` for sibling routes.
+- [Legal consent versioning](legal-consent-versioning.md) — bump `CURRENT_LEGAL_VERSION` to force re-acceptance; enforced by both a frontend gate and `requireLegalAccepted` server middleware.
 - [FTS with 'simple' tsvector config](simple-fts-retrieval-queries.md) — never pass full questions to websearch/plainto tsquery against a `simple` vector; OR extracted keywords instead or retrieval silently returns nothing.
 - [IQRA retrain semantics & confidence gating](iqra-retrain-and-confidence.md) — no fine-tuning exists; "retrain" = add few-shot Q&A to training_records; answer confidence is "high" only when KB retrieval returns chunks.
 - [Workspace TS refs build](workspace-ts-refs-build.md) — new lib package refs need `pnpm exec tsc -b lib/<pkg>` (no build script) or dependents fail with TS6305; `tsx -e` needs an async IIFE (CJS, no top-level await).

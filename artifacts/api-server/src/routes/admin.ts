@@ -19,7 +19,7 @@ import {
   UploadAdminDocumentResponse,
   UploadAdminTrainingDatasetResponse,
 } from "@workspace/api-zod";
-import { attachUser, requireAdmin } from "../lib/auth";
+import { attachUser, requireAdmin, requireLegalAccepted } from "../lib/auth";
 import { getAdminMaintenanceStatus, startAdminMaintenance } from "../lib/admin-maintenance";
 import { storeKnowledgeUpload } from "../lib/knowledge-upload";
 import { addTrainingRecord, bulkAddTrainingRecords, loadTrainingRecords } from "../lib/training-data";
@@ -83,7 +83,7 @@ async function parseTrainingDataset(
   }));
 }
 
-router.use(attachUser, requireAdmin);
+router.use(attachUser, requireAdmin, requireLegalAccepted);
 
 router.get("/overview", async (_req, res) => {
   const [documentsTotal, activeDocuments, usersTotal, adminsTotal, donations, trainingRecords, recentUsers] =

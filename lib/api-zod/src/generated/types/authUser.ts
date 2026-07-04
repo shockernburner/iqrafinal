@@ -13,4 +13,6 @@ export interface AuthUser {
   /** @nullable */
   name: string | null;
   role: AuthUserRole;
+  /** Whether the user has accepted the current version of the legal documents. */
+  legalAccepted: boolean;
 }

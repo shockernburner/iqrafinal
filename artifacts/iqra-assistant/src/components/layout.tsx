@@ -1,7 +1,7 @@
 import { ReactNode, useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
-import { LogOut, LayoutDashboard, MessageSquare, Heart, Settings, Plus, Loader2, Menu, X } from "lucide-react";
+import { LogOut, LayoutDashboard, MessageSquare, Heart, Settings, Plus, Loader2, Menu, X, FileText, Shield, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useListChats, useCreateChat } from "@workspace/api-client-react";
 import logoPng from "@/assets/logo.png";
@@ -127,6 +127,22 @@ export function AppLayout({ children }: { children: ReactNode }) {
             <Heart className="w-4 h-4 mr-2" />
             Support IQRA
           </Button>
+          <Button variant="ghost" className="w-full justify-start text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground" onClick={() => navigate("/terms")}>
+            <FileText className="w-4 h-4 mr-2" />
+            Terms of Service
+          </Button>
+          <Button variant="ghost" className="w-full justify-start text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground" onClick={() => navigate("/privacy")}>
+            <Shield className="w-4 h-4 mr-2" />
+            Privacy Policy
+          </Button>
+          <a
+            href="mailto:contact@iqra.live"
+            className="w-full inline-flex items-center h-9 px-3 rounded-md text-sm font-medium text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
+            onClick={() => setSidebarOpen(false)}
+          >
+            <Mail className="w-4 h-4 mr-2" />
+            Contact
+          </a>
           <Button variant="ghost" className="w-full justify-start text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground" onClick={logout}>
             <LogOut className="w-4 h-4 mr-2" />
             Sign Out

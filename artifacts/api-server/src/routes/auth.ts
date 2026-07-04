@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { pool } from "@workspace/db";
 import {
+  AcceptLegalResponse,
   GetSessionResponse,
   LoginBody,
   LoginResponse,
@@ -13,16 +14,54 @@ import {
   clearSessionCookie,
   findUserByEmail,
   hashPassword,
+  requireUser,
   setSessionCookie,
   signSessionToken,
   verifyPassword,
 } from "../lib/auth";
+import { CURRENT_LEGAL_VERSION } from "../lib/legal";
 import { sendWelcomeEmail } from "../lib/email";
 
 const router: IRouter = Router();
 
-router.get("/auth/session", attachUser, (req, res) => {
-  const data = GetSessionResponse.parse({ user: req.user ?? null });
+router.get("/auth/session", attachUser, async (req, res) => {
+  if (!req.user) {
+    res.json(GetSessionResponse.parse({ user: null }));
+    return;
+  }
+
+  // The legal-acceptance status lives in the DB (not the JWT), so it stays fresh
+  // even for users whose session cookie predates their acceptance. This also lets
+  // us log out any account that has since been deactivated.
+  const result = await pool.query<{ legal_accepted_version: string | null; is_active: boolean }>(
+    "SELECT legal_accepted_version, is_active FROM users WHERE id = $1",
+    [req.user.id],
+  );
+  const row = result.rows[0];
+  if (!row || !row.is_active) {
+    clearSessionCookie(res);
+    res.json(GetSessionResponse.parse({ user: null }));
+    return;
+  }
+
+  const legalAccepted = row.legal_accepted_version === CURRENT_LEGAL_VERSION;
+  const data = GetSessionResponse.parse({ user: { ...req.user, legalAccepted } });
+  res.json(data);
+});
+
+router.post("/auth/accept-legal", attachUser, requireUser, async (req, res) => {
+  const user = req.user!;
+  await pool.query(
+    `UPDATE users SET legal_accepted_version = $1, legal_accepted_at = now(), updated_at = now() WHERE id = $2`,
+    [CURRENT_LEGAL_VERSION, user.id],
+  );
+  await pool.query(
+    `INSERT INTO audit_log (action, entity_type, entity_id, metadata)
+     VALUES ('legal_accepted', 'user', $1, $2::jsonb)`,
+    [user.email, JSON.stringify({ version: CURRENT_LEGAL_VERSION })],
+  );
+
+  const data = AcceptLegalResponse.parse({ ...user, legalAccepted: true });
   res.json(data);
 });
 
@@ -46,7 +85,8 @@ router.post("/auth/login", async (req, res) => {
   const token = signSessionToken(sessionUser);
   setSessionCookie(res, token);
 
-  const data = LoginResponse.parse(sessionUser);
+  const legalAccepted = user.legal_accepted_version === CURRENT_LEGAL_VERSION;
+  const data = LoginResponse.parse({ ...sessionUser, legalAccepted });
   res.json(data);
 });
 
@@ -94,7 +134,9 @@ router.post("/auth/register", async (req, res) => {
     const token = signSessionToken(sessionUser);
     setSessionCookie(res, token);
 
-    const data = RegisterResponse.parse(sessionUser);
+    // A brand-new account has not yet accepted the legal documents; the consent
+    // gate on the client will prompt them immediately after registration.
+    const data = RegisterResponse.parse({ ...sessionUser, legalAccepted: false });
     res.json(data);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Registration failed.";

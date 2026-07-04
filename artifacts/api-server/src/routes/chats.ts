@@ -10,11 +10,11 @@ import {
   GetChatResponse,
   ListChatsResponse,
 } from "@workspace/api-zod";
-import { attachUser, requireUser } from "../lib/auth";
+import { attachUser, requireUser, requireLegalAccepted } from "../lib/auth";
 
 const router: IRouter = Router();
 
-router.use(attachUser, requireUser);
+router.use(attachUser, requireUser, requireLegalAccepted);
 
 router.get("/", async (req, res) => {
   const result = await pool.query<{

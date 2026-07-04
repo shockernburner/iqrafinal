@@ -385,6 +385,76 @@ export const useLogin = <TError = ErrorType<ErrorResponse>,
       return useMutation(getLoginMutationOptions(options));
     }
 
+export const getAcceptLegalUrl = () => {
+
+
+
+
+  return `/api/auth/accept-legal`
+}
+
+/**
+ * @summary Record the current user's acceptance of the legal documents
+ */
+export const acceptLegal = async ( options?: RequestInit): Promise<AuthUser> => {
+
+  return customFetch<AuthUser>(getAcceptLegalUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getAcceptLegalMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof acceptLegal>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof acceptLegal>>, TError,void, TContext> => {
+
+const mutationKey = ['acceptLegal'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof acceptLegal>>, void> = () => {
+
+
+          return  acceptLegal(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AcceptLegalMutationResult = NonNullable<Awaited<ReturnType<typeof acceptLegal>>>
+
+    export type AcceptLegalMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Record the current user's acceptance of the legal documents
+ */
+export const useAcceptLegal = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof acceptLegal>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof acceptLegal>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getAcceptLegalMutationOptions(options));
+    }
+
 export const getLogoutUrl = () => {
 
 

@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import type { Request, Response, NextFunction } from "express";
 import { pool } from "@workspace/db";
+import { CURRENT_LEGAL_VERSION } from "./legal";
 
 const SESSION_SECRET = process.env.SESSION_SECRET;
 if (!SESSION_SECRET) {
@@ -75,6 +76,23 @@ export function requireUser(req: Request, res: Response, next: NextFunction) {
   next();
 }
 
+export async function requireLegalAccepted(req: Request, res: Response, next: NextFunction) {
+  if (!req.user) {
+    res.status(401).json({ error: "Authentication required." });
+    return;
+  }
+  const result = await pool.query<{ legal_accepted_version: string | null }>(
+    "SELECT legal_accepted_version FROM users WHERE id = $1",
+    [req.user.id],
+  );
+  const row = result.rows[0];
+  if (!row || row.legal_accepted_version !== CURRENT_LEGAL_VERSION) {
+    res.status(403).json({ error: "You must accept the latest legal documents to continue." });
+    return;
+  }
+  next();
+}
+
 export function requireAdmin(req: Request, res: Response, next: NextFunction) {
   if (!req.user) {
     res.status(401).json({ error: "Authentication required." });
@@ -95,6 +113,10 @@ export async function findUserByEmail(email: string) {
     password_hash: string | null;
     role: "user" | "admin";
     is_active: boolean;
-  }>("SELECT id, email, name, password_hash, role, is_active FROM users WHERE email = $1", [email]);
+    legal_accepted_version: string | null;
+  }>(
+    "SELECT id, email, name, password_hash, role, is_active, legal_accepted_version FROM users WHERE email = $1",
+    [email],
+  );
   return result.rows[0] ?? null;
 }

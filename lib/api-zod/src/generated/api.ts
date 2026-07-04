@@ -35,7 +35,8 @@ export const GetSessionResponse = zod.object({
   "id": zod.string(),
   "email": zod.string(),
   "name": zod.string().nullable(),
-  "role": zod.enum(['user', 'admin'])
+  "role": zod.enum(['user', 'admin']),
+  "legalAccepted": zod.boolean().describe('Whether the user has accepted the current version of the legal documents.')
 }),zod.null()]).optional()
 })
 
@@ -52,7 +53,20 @@ export const LoginResponse = zod.object({
   "id": zod.string(),
   "email": zod.string(),
   "name": zod.string().nullable(),
-  "role": zod.enum(['user', 'admin'])
+  "role": zod.enum(['user', 'admin']),
+  "legalAccepted": zod.boolean().describe('Whether the user has accepted the current version of the legal documents.')
+})
+
+
+/**
+ * @summary Record the current user's acceptance of the legal documents
+ */
+export const AcceptLegalResponse = zod.object({
+  "id": zod.string(),
+  "email": zod.string(),
+  "name": zod.string().nullable(),
+  "role": zod.enum(['user', 'admin']),
+  "legalAccepted": zod.boolean().describe('Whether the user has accepted the current version of the legal documents.')
 })
 
 
@@ -77,7 +91,8 @@ export const RegisterResponse = zod.object({
   "id": zod.string(),
   "email": zod.string(),
   "name": zod.string().nullable(),
-  "role": zod.enum(['user', 'admin'])
+  "role": zod.enum(['user', 'admin']),
+  "legalAccepted": zod.boolean().describe('Whether the user has accepted the current version of the legal documents.')
 })
 
 

@@ -8,13 +8,13 @@ import {
   StartChatJobBody,
   StartChatJobResponse,
 } from "@workspace/api-zod";
-import { attachUser, requireUser } from "../lib/auth";
+import { attachUser, requireUser, requireLegalAccepted } from "../lib/auth";
 import { generateIqraChatResponse, type ChatApiPayload } from "../lib/chat";
 import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
 
-router.post("/chat", attachUser, requireUser, async (req, res) => {
+router.post("/chat", attachUser, requireUser, requireLegalAccepted, async (req, res) => {
   const body = SendChatBody.parse(req.body);
   try {
     const response = await generateIqraChatResponse(body.prompt);
@@ -38,7 +38,7 @@ type AsyncJob = {
 
 const jobs = new Map<string, AsyncJob>();
 
-router.post("/chat/async", attachUser, requireUser, (req, res) => {
+router.post("/chat/async", attachUser, requireUser, requireLegalAccepted, (req, res) => {
   const body = StartChatJobBody.parse(req.body);
   const jobId = randomUUID();
   const job: AsyncJob = { jobId, status: "running", stage: "Thinking", attempt: 1 };
@@ -68,7 +68,7 @@ router.post("/chat/async", attachUser, requireUser, (req, res) => {
   res.json(data);
 });
 
-router.get("/chat/async/:jobId", attachUser, requireUser, (req, res) => {
+router.get("/chat/async/:jobId", attachUser, requireUser, requireLegalAccepted, (req, res) => {
   const params = GetChatJobParams.parse(req.params);
   const job = jobs.get(params.jobId);
 
