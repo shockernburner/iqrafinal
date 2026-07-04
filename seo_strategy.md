@@ -1,9 +1,10 @@
 # SEO Strategy
 
 ## In scope
-- Public anonymous routes: `/login`, `/register`
-- Shared frontend HTML shell and static assets (`index.html`, `public/robots.txt`, PWA/icon assets)
-- Any future public-facing marketing or landing pages added to the SPA shell
+- Indexable public anonymous routes: `/`, `/our-vision`, `/terms`, `/privacy`
+- Shared frontend HTML shell and static assets (`index.html`, `public/robots.txt`, `public/sitemap.xml`, favicon/PWA assets)
+- Technical governance for public utility routes: `/login`, `/register`, `/forgot-password`, `/reset-password`
+- Any future public-facing marketing or landing pages added to the frontend shell
 
 ## Out of scope
 - Authenticated chat experience at `/`
@@ -12,7 +13,8 @@
 - API routes under `/api/**`
 
 ## Target audience
-- Inferred from project positioning: people seeking Islamic ethics and leadership guidance rooted in traditional texts.
+- People seeking Islamic ethics and leadership guidance rooted in traditional texts.
+- Potential donors, partners, and institutions evaluating the mission via public pages such as `/our-vision`.
 
 ## Primary keywords
 - Not explicitly defined in source.
