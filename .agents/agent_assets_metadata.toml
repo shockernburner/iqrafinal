@@ -12,3 +12,9 @@ id = "vONjrJy7FDb4KkIJaT0Av"
 uri = "file://exports/IQRA_Investor_Partner_List.xlsx"
 type = "table"
 title = "IQRA Investor & Partner Prospect List (38 prospects)"
+
+[[outputs]]
+id = "r1S7Je0nHK0bpojdVaLnc"
+uri = "file://exports/IQRA_ScaleUp_Cost_Model_Year1.xlsx"
+type = "table"
+title = "IQRA Year-1 Scale-Up Cost Model"
