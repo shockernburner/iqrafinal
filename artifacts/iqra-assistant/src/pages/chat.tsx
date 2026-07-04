@@ -13,7 +13,6 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import logoPng from "@/assets/logo.png";
-import logoIconPng from "@/assets/logo-icon.png";
 import ReactMarkdown from "react-markdown";
 
 function getInitials(name?: string | null, email?: string | null): string {
@@ -109,7 +108,6 @@ export default function Chat() {
             
             {!chatId && (
               <div className="flex flex-col items-center justify-center h-[50vh] text-center space-y-6 opacity-80">
-                <img src={logoIconPng} alt="IQRA" className="w-16 h-16 object-contain opacity-80" />
                 <h2 className="font-serif text-3xl text-foreground">Seek knowledge from the cradle to the grave.</h2>
                 <p className="text-muted-foreground max-w-md">
                   Ask questions about Islamic ethics, seek guidance on dilemmas, or explore teachings from traditional scholarship.
