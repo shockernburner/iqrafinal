@@ -31,6 +31,22 @@ from = "/register"
 to = "/register/index.html"
 
 [[services.production.rewrites]]
+from = "/terms"
+to = "/terms/index.html"
+
+[[services.production.rewrites]]
+from = "/privacy"
+to = "/privacy/index.html"
+
+[[services.production.rewrites]]
+from = "/forgot-password"
+to = "/forgot-password/index.html"
+
+[[services.production.rewrites]]
+from = "/reset-password"
+to = "/reset-password/index.html"
+
+[[services.production.rewrites]]
 from = "/*"
 to = "/index.html"
 

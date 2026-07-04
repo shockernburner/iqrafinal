@@ -6,6 +6,10 @@ import Landing from "@/pages/landing";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
 import OurVision from "@/pages/our-vision";
+import Terms from "@/pages/terms";
+import Privacy from "@/pages/privacy";
+import ForgotPassword from "@/pages/forgot-password";
+import ResetPassword from "@/pages/reset-password";
 import "./index.css";
 
 export interface PrerenderedRoute {
@@ -62,6 +66,42 @@ export const PRERENDER_ROUTES: PrerenderedRoute[] = [
     robots: "index, follow",
     canonicalPath: "/our-vision",
     Component: OurVision,
+  },
+  {
+    path: "/terms",
+    outFile: "terms/index.html",
+    title: "Terms of Service — IQRA Assistant",
+    description: "The terms that govern your use of IQRA Assistant.",
+    robots: "index, follow",
+    canonicalPath: "/terms",
+    Component: Terms,
+  },
+  {
+    path: "/privacy",
+    outFile: "privacy/index.html",
+    title: "Privacy Policy — IQRA Assistant",
+    description: "How IQRA Assistant collects, uses, and protects your data.",
+    robots: "index, follow",
+    canonicalPath: "/privacy",
+    Component: Privacy,
+  },
+  {
+    path: "/forgot-password",
+    outFile: "forgot-password/index.html",
+    title: "Reset Password — IQRA Assistant",
+    description: "Request a password reset link for your IQRA Assistant account.",
+    robots: "noindex, follow",
+    canonicalPath: "/forgot-password",
+    Component: ForgotPassword,
+  },
+  {
+    path: "/reset-password",
+    outFile: "reset-password/index.html",
+    title: "Set a New Password — IQRA Assistant",
+    description: "Choose a new password for your IQRA Assistant account.",
+    robots: "noindex, follow",
+    canonicalPath: "/reset-password",
+    Component: ResetPassword,
   },
 ];
 
