@@ -7,6 +7,7 @@ import {
   GetAdminMaintenanceResponse,
   GetAdminOverviewResponse,
   ListAdminDocumentsResponse,
+  ListAdminUsersResponse,
   ListAdminTrainingResponse,
   StartAdminMaintenanceBody,
   StartAdminMaintenanceResponse,
@@ -69,6 +70,41 @@ router.get("/overview", async (_req, res) => {
       eventId: row.event_id,
       amountCents: row.amount_cents,
       createdAt: row.created_at.toISOString(),
+    })),
+  });
+  res.json(data);
+});
+
+router.get("/users", async (_req, res) => {
+  const users = await pool.query<{
+    id: string;
+    email: string | null;
+    name: string | null;
+    role: string;
+    is_active: boolean;
+    created_at: Date;
+    chat_count: string;
+    last_active_at: Date | null;
+  }>(
+    `SELECT u.id, u.email, u.name, u.role, u.is_active, u.created_at,
+       count(t.id) AS chat_count,
+       max(t.last_message_at) AS last_active_at
+     FROM users u
+     LEFT JOIN chat_threads t ON t.user_id = u.id
+     GROUP BY u.id
+     ORDER BY u.created_at DESC`,
+  );
+
+  const data = ListAdminUsersResponse.parse({
+    users: users.rows.map((row) => ({
+      id: row.id,
+      email: row.email,
+      name: row.name,
+      role: row.role,
+      isActive: row.is_active,
+      createdAt: row.created_at.toISOString(),
+      chatCount: Number(row.chat_count),
+      lastActiveAt: row.last_active_at ? row.last_active_at.toISOString() : null,
     })),
   });
   res.json(data);

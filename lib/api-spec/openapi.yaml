@@ -364,6 +364,30 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /admin/users:
+    get:
+      operationId: listAdminUsers
+      tags: [admin]
+      summary: List all registered users
+      responses:
+        "200":
+          description: Users
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUserList"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Admin only
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /admin/documents:
     get:
       operationId: listAdminDocuments
@@ -936,6 +960,34 @@ components:
           type: string
         createdAt:
           type: string
+    AdminUserDetail:
+      type: object
+      required: [id, email, name, role, isActive, createdAt, chatCount, lastActiveAt]
+      properties:
+        id:
+          type: string
+        email:
+          type: ["string", "null"]
+        name:
+          type: ["string", "null"]
+        role:
+          type: string
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+        chatCount:
+          type: integer
+        lastActiveAt:
+          type: ["string", "null"]
+    AdminUserList:
+      type: object
+      required: [users]
+      properties:
+        users:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminUserDetail"
     AdminDonationSummary:
       type: object
       required: [eventId, amountCents, createdAt]

@@ -21,6 +21,8 @@ export * from './adminMaintenanceStartResult';
 export * from './adminMaintenanceStatus';
 export * from './adminOverview';
 export * from './adminTrainingList';
+export * from './adminUserDetail';
+export * from './adminUserList';
 export * from './adminUserSummary';
 export * from './authUser';
 export * from './authUserRole';

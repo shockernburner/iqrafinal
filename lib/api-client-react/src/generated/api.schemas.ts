@@ -257,6 +257,24 @@ export interface AdminOverview {
   recentDonations: AdminDonationSummary[];
 }
 
+export interface AdminUserDetail {
+  id: string;
+  /** @nullable */
+  email: string | null;
+  /** @nullable */
+  name: string | null;
+  role: string;
+  isActive: boolean;
+  createdAt: string;
+  chatCount: number;
+  /** @nullable */
+  lastActiveAt: string | null;
+}
+
+export interface AdminUserList {
+  users: AdminUserDetail[];
+}
+
 export interface AdminDocumentVersion {
   id: string;
   originalFilename: string;

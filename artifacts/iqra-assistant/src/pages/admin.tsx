@@ -4,6 +4,7 @@ import {
   useGetAdminOverview, 
   useListAdminDocuments, 
   useListAdminTraining, 
+  useListAdminUsers,
   useGetAdminMaintenance,
   useUploadAdminDocument,
   useUpdateAdminDocument,
@@ -33,6 +34,7 @@ export default function AdminDashboard() {
   const { data: documentsData, isLoading: isLoadingDocs } = useListAdminDocuments();
   const { data: trainingData, isLoading: isLoadingTraining } = useListAdminTraining();
   const { data: maintenanceData, isLoading: isLoadingMaint } = useGetAdminMaintenance();
+  const { data: usersData, isLoading: isLoadingUsers } = useListAdminUsers();
 
   const uploadDoc = useUploadAdminDocument({
     mutation: {
@@ -155,10 +157,11 @@ export default function AdminDashboard() {
           ) : null}
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3 max-w-md">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 max-w-xl h-auto">
               <TabsTrigger value="documents">Knowledge Base</TabsTrigger>
               <TabsTrigger value="training">Training</TabsTrigger>
               <TabsTrigger value="maintenance">Maintenance</TabsTrigger>
+              <TabsTrigger value="users">Users</TabsTrigger>
             </TabsList>
             
             <TabsContent value="documents" className="mt-6">
@@ -371,6 +374,62 @@ export default function AdminDashboard() {
                       </div>
                     </div>
                   </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="users" className="mt-6">
+              <Card>
+                <CardHeader className="border-b pb-4 mb-4">
+                  <CardTitle>Registered Users</CardTitle>
+                  <CardDescription>All accounts, their roles, and activity.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {isLoadingUsers ? (
+                    <div className="py-8 flex justify-center"><Loader2 className="animate-spin text-muted-foreground" /></div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Name</TableHead>
+                            <TableHead>Email</TableHead>
+                            <TableHead>Role</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead className="text-right">Chats</TableHead>
+                            <TableHead>Last Active</TableHead>
+                            <TableHead>Joined</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {usersData?.users.map((u) => (
+                            <TableRow key={u.id}>
+                              <TableCell className="font-medium">{u.name || "—"}</TableCell>
+                              <TableCell className="text-muted-foreground">{u.email || "—"}</TableCell>
+                              <TableCell>
+                                <Badge variant={u.role === "admin" ? "default" : "secondary"}>{u.role}</Badge>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant={u.isActive ? "outline" : "destructive"}>
+                                  {u.isActive ? "active" : "disabled"}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-right tabular-nums">{u.chatCount}</TableCell>
+                              <TableCell className="text-muted-foreground">
+                                {u.lastActiveAt ? new Date(u.lastActiveAt).toLocaleDateString() : "—"}
+                              </TableCell>
+                              <TableCell className="text-muted-foreground">{new Date(u.createdAt).toLocaleDateString()}</TableCell>
+                            </TableRow>
+                          ))}
+                          {usersData?.users.length === 0 && (
+                            <TableRow>
+                              <TableCell colSpan={7} className="text-center py-4 text-muted-foreground">No users found.</TableCell>
+                            </TableRow>
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>

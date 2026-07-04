@@ -240,6 +240,23 @@ export const GetAdminOverviewResponse = zod.object({
 
 
 /**
+ * @summary List all registered users
+ */
+export const ListAdminUsersResponse = zod.object({
+  "users": zod.array(zod.object({
+  "id": zod.string(),
+  "email": zod.string().nullable(),
+  "name": zod.string().nullable(),
+  "role": zod.string(),
+  "isActive": zod.boolean(),
+  "createdAt": zod.string(),
+  "chatCount": zod.number(),
+  "lastActiveAt": zod.string().nullable()
+}))
+})
+
+
+/**
  * @summary List knowledge base documents
  */
 export const ListAdminDocumentsResponse = zod.object({

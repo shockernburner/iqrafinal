@@ -83,7 +83,7 @@ export default function Chat() {
       <div className="flex-1 flex flex-col h-full overflow-hidden">
         
         {/* Header */}
-        <header className="h-16 flex items-center px-6 border-b border-border/40 shrink-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-10">
+        <header className="h-16 hidden md:flex items-center px-6 border-b border-border/40 shrink-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-10">
           <h2 className="font-serif text-lg font-medium">
             {chatData && chatData.messages.length > 0
               ? chatData.messages[0].content.substring(0, 40) + "..."
@@ -92,8 +92,8 @@ export default function Chat() {
         </header>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-4 py-8 md:px-8">
-          <div className="max-w-3xl mx-auto space-y-8 pb-20">
+        <div className="flex-1 overflow-y-auto px-3 py-6 md:px-8 md:py-8">
+          <div className="max-w-3xl mx-auto space-y-6 md:space-y-8 pb-20">
             
             {!chatId && (
               <div className="flex flex-col items-center justify-center h-[50vh] text-center space-y-6 opacity-80">
@@ -131,7 +131,7 @@ export default function Chat() {
               chatData?.messages.map((msg, i) => (
                 <div 
                   key={msg.id || i} 
-                  className={`flex gap-4 ${msg.role === "user" ? "ml-auto justify-end max-w-[85%]" : "max-w-[95%] md:max-w-[85%]"}`}
+                  className={`flex gap-2 md:gap-4 ${msg.role === "user" ? "ml-auto justify-end max-w-[90%] md:max-w-[85%]" : "max-w-[95%] md:max-w-[85%]"}`}
                 >
                   {msg.role === "assistant" && (
                     <div className="w-8 h-8 rounded-md bg-primary/10 flex items-center justify-center shrink-0 mt-1">
@@ -140,7 +140,7 @@ export default function Chat() {
                   )}
                   
                   <div 
-                    className={`p-5 rounded-2xl ${
+                    className={`p-4 md:p-5 rounded-2xl ${
                       msg.role === "user" 
                         ? "bg-primary text-primary-foreground rounded-tr-sm" 
                         : "bg-card border border-border/60 shadow-sm rounded-tl-sm text-card-foreground prose prose-sm md:prose-base prose-p:leading-relaxed prose-pre:bg-muted prose-pre:text-foreground max-w-none"
@@ -182,7 +182,7 @@ export default function Chat() {
         </div>
 
         {/* Input Area */}
-        <div className="shrink-0 p-4 md:p-6 bg-background border-t border-border/40">
+        <div className="shrink-0 p-3 md:p-6 bg-background border-t border-border/40">
           <div className="max-w-3xl mx-auto relative flex items-end shadow-sm rounded-xl overflow-hidden border border-border focus-within:ring-1 focus-within:ring-ring transition-shadow bg-card">
             <Textarea 
               value={input}
