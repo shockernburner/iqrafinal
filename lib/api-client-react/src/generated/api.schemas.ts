@@ -286,6 +286,25 @@ export interface AdminUserList {
   users: AdminUserDetail[];
 }
 
+export interface AdminDonationDetail {
+  id: string;
+  /** @nullable */
+  name: string | null;
+  /** @nullable */
+  email: string | null;
+  amountCents: number;
+  currency: string;
+  /** @nullable */
+  country: string | null;
+  anonymous: boolean;
+  createdAt: string;
+}
+
+export interface AdminDonationList {
+  donations: AdminDonationDetail[];
+  total: number;
+}
+
 export interface AdminDocumentVersion {
   id: string;
   originalFilename: string;

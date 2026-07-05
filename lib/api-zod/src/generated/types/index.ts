@@ -11,6 +11,8 @@ export * from './adminDocumentAction';
 export * from './adminDocumentActionAction';
 export * from './adminDocumentList';
 export * from './adminDocumentVersion';
+export * from './adminDonationDetail';
+export * from './adminDonationList';
 export * from './adminDonationSummary';
 export * from './adminIngestionJob';
 export * from './adminMaintenanceInput';

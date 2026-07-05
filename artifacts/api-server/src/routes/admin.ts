@@ -8,6 +8,7 @@ import {
   AddAdminTrainingResponse,
   GetAdminMaintenanceResponse,
   GetAdminOverviewResponse,
+  ListAdminDonationsResponse,
   ListAdminDocumentsResponse,
   ListAdminUsersResponse,
   ListAdminTrainingResponse,
@@ -104,12 +105,13 @@ router.get("/overview", async (_req, res) => {
       ),
     ]);
 
+  // Totals come from the donations table (same source as the /admin/donations
+  // detail tab) so the overview card and the detail list can never diverge.
   const donationsCountResult = await pool.query<{ count: string }>(
-    "SELECT count(*) FROM stripe_events WHERE type = 'checkout.session.completed'",
+    "SELECT count(*) FROM donations",
   );
   const donationsTotalResult = await pool.query<{ total: string | null }>(
-    `SELECT sum((payload->>'amountCents')::int) AS total
-     FROM stripe_events WHERE type = 'checkout.session.completed'`,
+    "SELECT sum(amount_cents) AS total FROM donations",
   );
 
   const data = GetAdminOverviewResponse.parse({
@@ -132,6 +134,39 @@ router.get("/overview", async (_req, res) => {
       amountCents: row.amount_cents,
       createdAt: row.created_at.toISOString(),
     })),
+  });
+  res.json(data);
+});
+
+router.get("/donations", async (_req, res) => {
+  const donations = await pool.query<{
+    id: string;
+    name: string | null;
+    email: string | null;
+    amount_cents: number;
+    currency: string;
+    country: string | null;
+    anonymous: boolean;
+    created_at: Date;
+  }>(
+    `SELECT d.id, u.name AS name, d.email, d.amount_cents, d.currency, d.country, d.anonymous, d.created_at
+     FROM donations d
+     LEFT JOIN users u ON u.id = d.user_id
+     ORDER BY d.created_at DESC`,
+  );
+
+  const data = ListAdminDonationsResponse.parse({
+    donations: donations.rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      email: row.email,
+      amountCents: row.amount_cents,
+      currency: row.currency,
+      country: row.country,
+      anonymous: row.anonymous,
+      createdAt: row.created_at.toISOString(),
+    })),
+    total: donations.rows.length,
   });
   res.json(data);
 });

@@ -284,6 +284,24 @@ export const GetAdminOverviewResponse = zod.object({
 
 
 /**
+ * @summary List all donations with donor details (admin only)
+ */
+export const ListAdminDonationsResponse = zod.object({
+  "donations": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string().nullable(),
+  "email": zod.string().nullable(),
+  "amountCents": zod.number(),
+  "currency": zod.string(),
+  "country": zod.string().nullable(),
+  "anonymous": zod.boolean(),
+  "createdAt": zod.string()
+})),
+  "total": zod.number()
+})
+
+
+/**
  * @summary List all registered users
  */
 export const ListAdminUsersResponse = zod.object({

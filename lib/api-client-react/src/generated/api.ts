@@ -22,6 +22,7 @@ import type {
 import type {
   AdminDocumentAction,
   AdminDocumentList,
+  AdminDonationList,
   AdminMaintenanceInput,
   AdminMaintenanceStartResult,
   AdminMaintenanceStatus,
@@ -1317,6 +1318,83 @@ export function useGetAdminOverview<TData = Awaited<ReturnType<typeof getAdminOv
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetAdminOverviewQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListAdminDonationsUrl = () => {
+
+
+
+
+  return `/api/admin/donations`
+}
+
+/**
+ * @summary List all donations with donor details (admin only)
+ */
+export const listAdminDonations = async ( options?: RequestInit): Promise<AdminDonationList> => {
+
+  return customFetch<AdminDonationList>(getListAdminDonationsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAdminDonationsQueryKey = () => {
+    return [
+    `/api/admin/donations`
+    ] as const;
+    }
+
+
+export const getListAdminDonationsQueryOptions = <TData = Awaited<ReturnType<typeof listAdminDonations>>, TError = ErrorType<ErrorResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminDonations>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAdminDonationsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAdminDonations>>> = ({ signal }) => listAdminDonations({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAdminDonations>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAdminDonationsQueryResult = NonNullable<Awaited<ReturnType<typeof listAdminDonations>>>
+export type ListAdminDonationsQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary List all donations with donor details (admin only)
+ */
+
+export function useListAdminDonations<TData = Awaited<ReturnType<typeof listAdminDonations>>, TError = ErrorType<ErrorResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminDonations>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAdminDonationsQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

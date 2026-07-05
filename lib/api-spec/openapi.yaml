@@ -426,6 +426,30 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /admin/donations:
+    get:
+      operationId: listAdminDonations
+      tags: [admin]
+      summary: List all donations with donor details (admin only)
+      responses:
+        "200":
+          description: Donations
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminDonationList"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Admin only
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /admin/users:
     get:
       operationId: listAdminUsers
@@ -1192,6 +1216,36 @@ components:
           type: ["integer", "null"]
         createdAt:
           type: string
+    AdminDonationDetail:
+      type: object
+      required: [id, name, email, amountCents, currency, country, anonymous, createdAt]
+      properties:
+        id:
+          type: string
+        name:
+          type: ["string", "null"]
+        email:
+          type: ["string", "null"]
+        amountCents:
+          type: integer
+        currency:
+          type: string
+        country:
+          type: ["string", "null"]
+        anonymous:
+          type: boolean
+        createdAt:
+          type: string
+    AdminDonationList:
+      type: object
+      required: [donations, total]
+      properties:
+        donations:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminDonationDetail"
+        total:
+          type: integer
 
     AdminDocumentVersion:
       type: object

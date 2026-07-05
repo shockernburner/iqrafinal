@@ -6,6 +6,7 @@ import {
   useListAdminTraining, 
   useListAdminUsers,
   useGetAdminMaintenance,
+  useListAdminDonations,
   useUploadAdminDocument,
   useUpdateAdminDocument,
   useStartAdminMaintenance,
@@ -26,6 +27,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import AdminContentEditor from "@/components/admin-content-editor";
+import { countryLabel } from "@/lib/country";
 
 export default function AdminDashboard() {
   const { toast } = useToast();
@@ -37,6 +39,7 @@ export default function AdminDashboard() {
   const { data: trainingData, isLoading: isLoadingTraining } = useListAdminTraining();
   const { data: maintenanceData, isLoading: isLoadingMaint } = useGetAdminMaintenance();
   const { data: usersData, isLoading: isLoadingUsers } = useListAdminUsers();
+  const { data: donationsData, isLoading: isLoadingDonations } = useListAdminDonations();
 
   const uploadDoc = useUploadAdminDocument({
     mutation: {
@@ -182,11 +185,12 @@ export default function AdminDashboard() {
           ) : null}
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 max-w-2xl h-auto">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-6 max-w-3xl h-auto">
               <TabsTrigger value="documents">Knowledge Base</TabsTrigger>
               <TabsTrigger value="training">Training</TabsTrigger>
               <TabsTrigger value="maintenance">Maintenance</TabsTrigger>
               <TabsTrigger value="users">Users</TabsTrigger>
+              <TabsTrigger value="donations">Sponsors</TabsTrigger>
               <TabsTrigger value="content">Landing Content</TabsTrigger>
             </TabsList>
             
@@ -377,6 +381,58 @@ export default function AdminDashboard() {
                         ))}
                       </TableBody>
                     </Table>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="donations" className="mt-6">
+              <Card>
+                <CardHeader className="border-b pb-4 mb-4">
+                  <CardTitle>Sponsors & Donations</CardTitle>
+                  <CardDescription>Every contribution and the supporter behind it.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {isLoadingDonations ? (
+                    <div className="py-8 flex justify-center"><Loader2 className="animate-spin text-muted-foreground" /></div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Sponsor</TableHead>
+                            <TableHead>Email</TableHead>
+                            <TableHead>Country</TableHead>
+                            <TableHead className="text-right">Amount</TableHead>
+                            <TableHead>Visibility</TableHead>
+                            <TableHead>Date</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {donationsData?.donations.map((d) => (
+                            <TableRow key={d.id}>
+                              <TableCell className="font-medium">{d.name || "—"}</TableCell>
+                              <TableCell className="text-muted-foreground">{d.email || "—"}</TableCell>
+                              <TableCell className="text-muted-foreground">{countryLabel(d.country) || "—"}</TableCell>
+                              <TableCell className="text-right tabular-nums font-medium">
+                                {(d.amountCents / 100).toLocaleString(undefined, { style: "currency", currency: (d.currency || "usd").toUpperCase() })}
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant={d.anonymous ? "secondary" : "outline"}>
+                                  {d.anonymous ? "Anonymous" : "Public"}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-muted-foreground">{new Date(d.createdAt).toLocaleDateString()}</TableCell>
+                            </TableRow>
+                          ))}
+                          {donationsData?.donations.length === 0 && (
+                            <TableRow>
+                              <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No donations yet.</TableCell>
+                            </TableRow>
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
                   )}
                 </CardContent>
               </Card>

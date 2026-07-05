@@ -3,16 +3,18 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import logoPng from "@/assets/logo.png";
-import { BookOpen, Compass, ShieldCheck, Eye, Users } from "lucide-react";
+import { BookOpen, Compass, ShieldCheck, Eye, Users, Heart } from "lucide-react";
 import { useSeo } from "@/hooks/use-seo";
 import { HomeStructuredData } from "@/components/structured-data";
 import { useSiteContent } from "@/lib/site-content";
 import {
   useGetSiteStats,
+  useGetSponsors,
   recordVisit,
   getGetSiteStatsQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { countryLabel } from "@/lib/country";
 
 const PILLAR_ICONS = [BookOpen, Compass, ShieldCheck];
 const VISIT_KEY = "iqra-visit-counted";
@@ -34,9 +36,10 @@ function StatsBar() {
   }, [queryClient]);
 
   const visits = data?.pageVisits ?? 0;
+  const members = data?.registeredUsers ?? 0;
 
   return (
-    <div className="mt-10 flex items-center justify-center">
+    <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
       <div
         className="inline-flex items-center gap-3 rounded-full border border-border/60 bg-card px-5 py-2.5 shadow-sm"
         data-testid="stat-page-visits"
@@ -49,7 +52,73 @@ function StatsBar() {
           total visits
         </span>
       </div>
+      <div
+        className="inline-flex items-center gap-3 rounded-full border border-border/60 bg-card px-5 py-2.5 shadow-sm"
+        data-testid="stat-registered-users"
+      >
+        <Users className="w-4 h-4 text-primary" />
+        <span className="text-sm text-muted-foreground">
+          <span className="font-semibold text-foreground tabular-nums">
+            {members.toLocaleString()}
+          </span>{" "}
+          registered {members === 1 ? "member" : "members"}
+        </span>
+      </div>
     </div>
+  );
+}
+
+function SponsorsPreview() {
+  const { data } = useGetSponsors({
+    // @ts-ignore - generated hook option typing requires queryKey but it is supplied internally
+    query: { retry: false },
+  });
+  const sponsors = (data?.sponsors ?? []).slice(0, 6);
+
+  if (sponsors.length === 0) return null;
+
+  return (
+    <section className="max-w-5xl mx-auto px-6 pb-24">
+      <div className="text-center mb-8">
+        <div className="inline-flex items-center justify-center p-3 bg-primary/10 text-primary rounded-full mb-4">
+          <Heart className="w-6 h-6 fill-primary" />
+        </div>
+        <h2 className="font-serif text-3xl font-bold text-foreground">Our Sponsors</h2>
+        <p className="mt-3 text-muted-foreground max-w-xl mx-auto">
+          Generous supporters whose sadaqah jāriyah keeps IQRA free for every seeker.
+        </p>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" data-testid="list-sponsors-preview">
+        {sponsors.map((sponsor, index) => {
+          const name = sponsor.anonymous || !sponsor.displayName ? "Anonymous" : sponsor.displayName;
+          const country = countryLabel(sponsor.country);
+          return (
+            <Card key={index} className="border-border/50 shadow-sm">
+              <CardContent className="flex items-center gap-4 py-4">
+                <span className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 text-primary font-semibold flex items-center justify-center text-sm">
+                  {index + 1}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className="font-serif font-semibold text-foreground truncate">{name}</p>
+                  {country && <p className="text-sm text-muted-foreground">{country}</p>}
+                </div>
+                <Heart className="w-5 h-5 text-primary/40 fill-primary/20 flex-shrink-0" />
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+      <div className="mt-8 flex items-center justify-center gap-4">
+        <Link href="/sponsors">
+          <Button variant="outline" data-testid="link-view-all-sponsors">View all sponsors</Button>
+        </Link>
+        <Link href="/donate">
+          <Button data-testid="link-sponsors-donate">
+            <Heart className="w-4 h-4 mr-2" /> Become a sponsor
+          </Button>
+        </Link>
+      </div>
+    </section>
   );
 }
 
@@ -125,6 +194,8 @@ export default function Landing() {
             );
           })}
         </section>
+
+        <SponsorsPreview />
       </main>
 
       <footer className="border-t border-border/50 py-8">
