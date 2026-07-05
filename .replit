@@ -1,4 +1,4 @@
-modules = ["nodejs-24", "python-3.11"]
+modules = ["nodejs-24", "python-3.11", "postgresql-16"]
 
 [deployment]
 router = "application"
@@ -27,3 +27,4 @@ channel = "stable-25_05"
 RESEND_FROM_WELCOME_EMAIL = "welcome@iqra.live"
 RESEND_FROM_DONATION_EMAIL = "thanks@iqra.live"
 RESEND_FROM_PASSWORD_RESET = "Password Reset <reset-password@iqra.live>"
+ADMIN_EMAILS = "contact@iqra.live,firdous.mahmood26@gmail.com"

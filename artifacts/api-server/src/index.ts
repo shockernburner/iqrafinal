@@ -2,6 +2,7 @@ import app from "./app";
 import { logger } from "./lib/logger";
 import { runMigrations } from "./db/migrate";
 import { startIngestionWorker } from "./lib/ingestion-worker";
+import { ensureAdmins } from "./lib/ensure-admins";
 
 const rawPort = process.env["PORT"];
 
@@ -19,6 +20,7 @@ if (Number.isNaN(port) || port <= 0) {
 
 async function start() {
   await runMigrations();
+  await ensureAdmins();
   startIngestionWorker();
 
   app.listen(port, (err) => {
