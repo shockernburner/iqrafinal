@@ -302,6 +302,32 @@ export const ListAdminDonationsResponse = zod.object({
 
 
 /**
+ * @summary Growth time-series (signups, donations, visits) and totals (admin only)
+ */
+export const GetAdminGrowthResponse = zod.object({
+  "signups": zod.array(zod.object({
+  "date": zod.string(),
+  "count": zod.number()
+})),
+  "donations": zod.array(zod.object({
+  "date": zod.string(),
+  "count": zod.number(),
+  "amountCents": zod.number()
+})),
+  "visits": zod.array(zod.object({
+  "date": zod.string(),
+  "count": zod.number()
+})),
+  "totals": zod.object({
+  "users": zod.number(),
+  "pageVisits": zod.number(),
+  "donationsCount": zod.number(),
+  "donationsAmountCents": zod.number()
+})
+})
+
+
+/**
  * @summary List all registered users
  */
 export const ListAdminUsersResponse = zod.object({

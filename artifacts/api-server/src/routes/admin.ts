@@ -6,6 +6,7 @@ import { pool } from "@workspace/db";
 import {
   AddAdminTrainingBody,
   AddAdminTrainingResponse,
+  GetAdminGrowthResponse,
   GetAdminMaintenanceResponse,
   GetAdminOverviewResponse,
   ListAdminDonationsResponse,
@@ -167,6 +168,71 @@ router.get("/donations", async (_req, res) => {
       createdAt: row.created_at.toISOString(),
     })),
     total: donations.rows.length,
+  });
+  res.json(data);
+});
+
+router.get("/growth", async (_req, res) => {
+  // 90-day daily time-series with gap-filled dates (generate_series) so charts
+  // render a continuous line even on days with zero activity.
+  const [signups, donations, visits, totals] = await Promise.all([
+    pool.query<{ date: string; count: number }>(
+      `SELECT to_char(d::date, 'YYYY-MM-DD') AS date, COALESCE(c.count, 0)::int AS count
+       FROM generate_series(current_date - interval '89 days', current_date, interval '1 day') d
+       LEFT JOIN (
+         SELECT date_trunc('day', created_at)::date AS day, count(*) AS count
+         FROM users GROUP BY 1
+       ) c ON c.day = d::date
+       ORDER BY d`,
+    ),
+    pool.query<{ date: string; count: number; amount_cents: number }>(
+      `SELECT to_char(d::date, 'YYYY-MM-DD') AS date, COALESCE(c.count, 0)::int AS count,
+              COALESCE(c.amount, 0)::int AS amount_cents
+       FROM generate_series(current_date - interval '89 days', current_date, interval '1 day') d
+       LEFT JOIN (
+         SELECT date_trunc('day', created_at)::date AS day, count(*) AS count, sum(amount_cents) AS amount
+         FROM donations GROUP BY 1
+       ) c ON c.day = d::date
+       ORDER BY d`,
+    ),
+    pool.query<{ date: string; count: number }>(
+      `SELECT to_char(d::date, 'YYYY-MM-DD') AS date, COALESCE(c.count, 0)::int AS count
+       FROM generate_series(current_date - interval '89 days', current_date, interval '1 day') d
+       LEFT JOIN (
+         SELECT date_trunc('day', created_at)::date AS day, count(*) AS count
+         FROM page_visit_events GROUP BY 1
+       ) c ON c.day = d::date
+       ORDER BY d`,
+    ),
+    pool.query<{
+      users: string;
+      page_visits: string | null;
+      donations_count: string;
+      donations_amount_cents: string;
+    }>(
+      `SELECT
+         (SELECT count(*) FROM users) AS users,
+         (SELECT count FROM site_stats WHERE key = 'page_visits') AS page_visits,
+         (SELECT count(*) FROM donations) AS donations_count,
+         (SELECT COALESCE(sum(amount_cents), 0) FROM donations) AS donations_amount_cents`,
+    ),
+  ]);
+
+  const t = totals.rows[0];
+  const data = GetAdminGrowthResponse.parse({
+    signups: signups.rows.map((r) => ({ date: r.date, count: r.count })),
+    donations: donations.rows.map((r) => ({
+      date: r.date,
+      count: r.count,
+      amountCents: r.amount_cents,
+    })),
+    visits: visits.rows.map((r) => ({ date: r.date, count: r.count })),
+    totals: {
+      users: Number(t?.users ?? 0),
+      pageVisits: Number(t?.page_visits ?? 0),
+      donationsCount: Number(t?.donations_count ?? 0),
+      donationsAmountCents: Number(t?.donations_amount_cents ?? 0),
+    },
   });
   res.json(data);
 });

@@ -305,6 +305,31 @@ export interface AdminDonationList {
   total: number;
 }
 
+export interface AdminGrowthPoint {
+  date: string;
+  count: number;
+}
+
+export interface AdminGrowthDonationPoint {
+  date: string;
+  count: number;
+  amountCents: number;
+}
+
+export interface AdminGrowthTotals {
+  users: number;
+  pageVisits: number;
+  donationsCount: number;
+  donationsAmountCents: number;
+}
+
+export interface AdminGrowth {
+  signups: AdminGrowthPoint[];
+  donations: AdminGrowthDonationPoint[];
+  visits: AdminGrowthPoint[];
+  totals: AdminGrowthTotals;
+}
+
 export interface AdminDocumentVersion {
   id: string;
   originalFilename: string;

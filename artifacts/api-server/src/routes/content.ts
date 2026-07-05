@@ -36,6 +36,14 @@ router.get("/stats", async (_req, res) => {
 });
 
 router.post("/visit", async (_req, res) => {
+  // Record one event row per visit for the admin Growth time-series. This is
+  // best-effort: a failure here must never break the visit response or leave the
+  // page_visits counter and event log inconsistent, so it runs on its own and
+  // swallows errors rather than joining the Promise.all below.
+  pool
+    .query("INSERT INTO page_visit_events DEFAULT VALUES")
+    .catch((err) => console.error("page_visit_events insert failed", err));
+
   const [visits, users] = await Promise.all([
     pool.query<{ count: string }>(
       `INSERT INTO site_stats (key, count) VALUES ('page_visits', 1)

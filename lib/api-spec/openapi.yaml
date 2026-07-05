@@ -450,6 +450,30 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /admin/growth:
+    get:
+      operationId: getAdminGrowth
+      tags: [admin]
+      summary: Growth time-series (signups, donations, visits) and totals (admin only)
+      responses:
+        "200":
+          description: Growth analytics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminGrowth"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Admin only
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /admin/users:
     get:
       operationId: listAdminUsers
@@ -1246,6 +1270,55 @@ components:
             $ref: "#/components/schemas/AdminDonationDetail"
         total:
           type: integer
+
+    AdminGrowthPoint:
+      type: object
+      required: [date, count]
+      properties:
+        date:
+          type: string
+        count:
+          type: integer
+    AdminGrowthDonationPoint:
+      type: object
+      required: [date, count, amountCents]
+      properties:
+        date:
+          type: string
+        count:
+          type: integer
+        amountCents:
+          type: integer
+    AdminGrowthTotals:
+      type: object
+      required: [users, pageVisits, donationsCount, donationsAmountCents]
+      properties:
+        users:
+          type: integer
+        pageVisits:
+          type: integer
+        donationsCount:
+          type: integer
+        donationsAmountCents:
+          type: integer
+    AdminGrowth:
+      type: object
+      required: [signups, donations, visits, totals]
+      properties:
+        signups:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminGrowthPoint"
+        donations:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminGrowthDonationPoint"
+        visits:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminGrowthPoint"
+        totals:
+          $ref: "#/components/schemas/AdminGrowthTotals"
 
     AdminDocumentVersion:
       type: object

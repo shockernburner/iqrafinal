@@ -23,6 +23,7 @@ import type {
   AdminDocumentAction,
   AdminDocumentList,
   AdminDonationList,
+  AdminGrowth,
   AdminMaintenanceInput,
   AdminMaintenanceStartResult,
   AdminMaintenanceStatus,
@@ -1395,6 +1396,83 @@ export function useListAdminDonations<TData = Awaited<ReturnType<typeof listAdmi
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getListAdminDonationsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetAdminGrowthUrl = () => {
+
+
+
+
+  return `/api/admin/growth`
+}
+
+/**
+ * @summary Growth time-series (signups, donations, visits) and totals (admin only)
+ */
+export const getAdminGrowth = async ( options?: RequestInit): Promise<AdminGrowth> => {
+
+  return customFetch<AdminGrowth>(getGetAdminGrowthUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAdminGrowthQueryKey = () => {
+    return [
+    `/api/admin/growth`
+    ] as const;
+    }
+
+
+export const getGetAdminGrowthQueryOptions = <TData = Awaited<ReturnType<typeof getAdminGrowth>>, TError = ErrorType<ErrorResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminGrowth>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAdminGrowthQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdminGrowth>>> = ({ signal }) => getAdminGrowth({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAdminGrowth>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAdminGrowthQueryResult = NonNullable<Awaited<ReturnType<typeof getAdminGrowth>>>
+export type GetAdminGrowthQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary Growth time-series (signups, donations, visits) and totals (admin only)
+ */
+
+export function useGetAdminGrowth<TData = Awaited<ReturnType<typeof getAdminGrowth>>, TError = ErrorType<ErrorResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminGrowth>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAdminGrowthQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

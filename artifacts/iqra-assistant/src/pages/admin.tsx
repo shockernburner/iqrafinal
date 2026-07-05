@@ -7,6 +7,7 @@ import {
   useListAdminUsers,
   useGetAdminMaintenance,
   useListAdminDonations,
+  useGetAdminGrowth,
   useUploadAdminDocument,
   useUpdateAdminDocument,
   useStartAdminMaintenance,
@@ -28,6 +29,27 @@ import { useToast } from "@/hooks/use-toast";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import AdminContentEditor from "@/components/admin-content-editor";
 import { countryLabel } from "@/lib/country";
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+} from "recharts";
+
+function fmtTick(value: string): string {
+  const d = new Date(value + "T00:00:00");
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+function fmtLabel(value: string): string {
+  const d = new Date(value + "T00:00:00");
+  return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+}
 
 export default function AdminDashboard() {
   const { toast } = useToast();
@@ -40,6 +62,7 @@ export default function AdminDashboard() {
   const { data: maintenanceData, isLoading: isLoadingMaint } = useGetAdminMaintenance();
   const { data: usersData, isLoading: isLoadingUsers } = useListAdminUsers();
   const { data: donationsData, isLoading: isLoadingDonations } = useListAdminDonations();
+  const { data: growthData, isLoading: isLoadingGrowth } = useGetAdminGrowth();
 
   const uploadDoc = useUploadAdminDocument({
     mutation: {
@@ -185,7 +208,8 @@ export default function AdminDashboard() {
           ) : null}
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-6 max-w-3xl h-auto">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-7 max-w-4xl h-auto">
+              <TabsTrigger value="growth">Growth</TabsTrigger>
               <TabsTrigger value="documents">Knowledge Base</TabsTrigger>
               <TabsTrigger value="training">Training</TabsTrigger>
               <TabsTrigger value="maintenance">Maintenance</TabsTrigger>
@@ -193,7 +217,108 @@ export default function AdminDashboard() {
               <TabsTrigger value="donations">Sponsors</TabsTrigger>
               <TabsTrigger value="content">Landing Content</TabsTrigger>
             </TabsList>
-            
+
+            <TabsContent value="growth" className="mt-6">
+              {isLoadingGrowth ? (
+                <div className="py-16 flex justify-center"><Loader2 className="animate-spin text-muted-foreground" /></div>
+              ) : (
+                <div className="space-y-6">
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <Card>
+                      <CardHeader className="pb-2"><CardDescription>Registered members</CardDescription></CardHeader>
+                      <CardContent><p className="text-3xl font-bold tabular-nums">{growthData?.totals.users ?? 0}</p></CardContent>
+                    </Card>
+                    <Card>
+                      <CardHeader className="pb-2"><CardDescription>Landing visits</CardDescription></CardHeader>
+                      <CardContent><p className="text-3xl font-bold tabular-nums">{growthData?.totals.pageVisits ?? 0}</p></CardContent>
+                    </Card>
+                    <Card>
+                      <CardHeader className="pb-2"><CardDescription>Donations</CardDescription></CardHeader>
+                      <CardContent><p className="text-3xl font-bold tabular-nums">{growthData?.totals.donationsCount ?? 0}</p></CardContent>
+                    </Card>
+                    <Card>
+                      <CardHeader className="pb-2"><CardDescription>Total raised</CardDescription></CardHeader>
+                      <CardContent><p className="text-3xl font-bold tabular-nums">${((growthData?.totals.donationsAmountCents ?? 0) / 100).toLocaleString()}</p></CardContent>
+                    </Card>
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <Card>
+                      <CardHeader className="border-b pb-4 mb-2">
+                        <CardTitle>New members</CardTitle>
+                        <CardDescription>Sign-ups per day (last 90 days)</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <ResponsiveContainer width="100%" height={240}>
+                          <AreaChart data={growthData?.signups ?? []} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
+                            <defs>
+                              <linearGradient id="signupFill" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor="#103D2B" stopOpacity={0.35} />
+                                <stop offset="100%" stopColor="#103D2B" stopOpacity={0} />
+                              </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#e5e2d8" vertical={false} />
+                            <XAxis dataKey="date" tick={{ fontSize: 11 }} tickFormatter={fmtTick} minTickGap={28} />
+                            <YAxis allowDecimals={false} tick={{ fontSize: 11 }} width={32} />
+                            <Tooltip labelFormatter={fmtLabel} />
+                            <Area type="monotone" dataKey="count" name="Sign-ups" stroke="#103D2B" strokeWidth={2} fill="url(#signupFill)" />
+                          </AreaChart>
+                        </ResponsiveContainer>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader className="border-b pb-4 mb-2">
+                        <CardTitle>Visits</CardTitle>
+                        <CardDescription>Landing-page visits per day (recorded going forward)</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <ResponsiveContainer width="100%" height={240}>
+                          <AreaChart data={growthData?.visits ?? []} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
+                            <defs>
+                              <linearGradient id="visitFill" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor="#B08D2E" stopOpacity={0.35} />
+                                <stop offset="100%" stopColor="#B08D2E" stopOpacity={0} />
+                              </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#e5e2d8" vertical={false} />
+                            <XAxis dataKey="date" tick={{ fontSize: 11 }} tickFormatter={fmtTick} minTickGap={28} />
+                            <YAxis allowDecimals={false} tick={{ fontSize: 11 }} width={32} />
+                            <Tooltip labelFormatter={fmtLabel} />
+                            <Area type="monotone" dataKey="count" name="Visits" stroke="#B08D2E" strokeWidth={2} fill="url(#visitFill)" />
+                          </AreaChart>
+                        </ResponsiveContainer>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="lg:col-span-2">
+                      <CardHeader className="border-b pb-4 mb-2">
+                        <CardTitle>Donations</CardTitle>
+                        <CardDescription>Amount raised per day, USD (last 90 days)</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <ResponsiveContainer width="100%" height={240}>
+                          <BarChart data={(growthData?.donations ?? []).map((d) => ({ date: d.date, amount: d.amountCents / 100 }))} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#e5e2d8" vertical={false} />
+                            <XAxis dataKey="date" tick={{ fontSize: 11 }} tickFormatter={fmtTick} minTickGap={28} />
+                            <YAxis tick={{ fontSize: 11 }} width={40} tickFormatter={(v) => `$${v}`} />
+                            <Tooltip labelFormatter={fmtLabel} formatter={(v: number) => [`$${v.toLocaleString()}`, "Raised"]} />
+                            <Bar dataKey="amount" name="Raised" fill="#103D2B" radius={[3, 3, 0, 0]} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  <p className="text-xs text-muted-foreground">
+                    These figures come from IQRA's own database. They differ from Replit's built-in traffic analytics,
+                    which counts every request to the server (including API calls and bots). Visit history is recorded
+                    from the day this panel went live onward.
+                  </p>
+                </div>
+              )}
+            </TabsContent>
+
             <TabsContent value="documents" className="mt-6">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between border-b pb-4 mb-4">
