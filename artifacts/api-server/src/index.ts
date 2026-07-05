@@ -3,6 +3,7 @@ import { logger } from "./lib/logger";
 import { runMigrations } from "./db/migrate";
 import { startIngestionWorker } from "./lib/ingestion-worker";
 import { ensureAdmins } from "./lib/ensure-admins";
+import { reconcileDonations } from "./lib/reconcile-donations";
 
 const rawPort = process.env["PORT"];
 
@@ -30,6 +31,12 @@ async function start() {
     }
 
     logger.info({ port }, "Server listening");
+
+    // Best-effort donation backfill AFTER the server is accepting traffic, so it
+    // can never delay readiness (important on autoscaled instances).
+    void reconcileDonations().catch((err) => {
+      logger.error({ err }, "Donation reconciliation failed");
+    });
   });
 }
 

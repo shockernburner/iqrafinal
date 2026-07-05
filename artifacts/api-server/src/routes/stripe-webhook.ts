@@ -3,14 +3,10 @@ import Stripe from "stripe";
 import { pool } from "@workspace/db";
 import { logger } from "../lib/logger";
 import { sendDonationThankYouEmail } from "../lib/email";
+import { getStripe } from "../lib/stripe-client";
+import { donationFromSession, recordDonationFromSession } from "../lib/donations";
 
 const router: IRouter = Router();
-
-function getStripe() {
-  const secretKey = process.env.STRIPE_SECRET_KEY;
-  if (!secretKey) return null;
-  return new Stripe(secretKey);
-}
 
 router.post("/", async (req, res) => {
   const stripe = getStripe();
@@ -58,22 +54,9 @@ router.post("/", async (req, res) => {
 
     if (event.type === "checkout.session.completed") {
       const session = event.data.object as Stripe.Checkout.Session;
-      const email = session.customer_details?.email ?? session.customer_email ?? null;
-      const amountCents = session.amount_total ?? 0;
-      const currency = session.currency ?? "usd";
-      const userId = session.metadata?.userId ?? null;
-      const anonymous = session.metadata?.anonymous === "true";
-      const country =
-        session.customer_details?.address?.country ?? (session.metadata?.country || null);
+      const { email, amountCents } = donationFromSession(session);
 
-      if (amountCents > 0) {
-        await pool.query(
-          `INSERT INTO donations (user_id, session_id, email, amount_cents, currency, country, anonymous)
-           VALUES ($1, $2, $3, $4, $5, $6, $7)
-           ON CONFLICT (session_id) DO NOTHING`,
-          [userId, session.id, email, amountCents, currency, country, anonymous],
-        );
-      }
+      await recordDonationFromSession(session);
 
       if (email && amountCents > 0) {
         await sendDonationThankYouEmail(email, amountCents);

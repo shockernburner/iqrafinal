@@ -1,16 +1,10 @@
 import { Router, type IRouter } from "express";
-import Stripe from "stripe";
 import { CreateDonationCheckoutBody, CreateDonationCheckoutResponse } from "@workspace/api-zod";
 import { attachUser, requireUser, requireLegalAccepted } from "../lib/auth";
 import { getClientIp, lookupCountry } from "../lib/geo";
+import { getStripe } from "../lib/stripe-client";
 
 const router: IRouter = Router();
-
-function getStripe() {
-  const secretKey = process.env.STRIPE_SECRET_KEY;
-  if (!secretKey) return null;
-  return new Stripe(secretKey);
-}
 
 router.post("/donate", attachUser, requireUser, requireLegalAccepted, async (req, res) => {
   const body = CreateDonationCheckoutBody.parse(req.body);
