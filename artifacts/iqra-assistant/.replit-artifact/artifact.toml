@@ -51,6 +51,10 @@ from = "/our-vision"
 to = "/our-vision/index.html"
 
 [[services.production.rewrites]]
+from = "/sponsors"
+to = "/sponsors/index.html"
+
+[[services.production.rewrites]]
 from = "/*"
 to = "/index.html"
 

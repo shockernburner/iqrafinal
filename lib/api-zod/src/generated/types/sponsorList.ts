@@ -5,8 +5,8 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { Sponsor } from './sponsor';
 
-export interface DonationInput {
-  amount?: number;
-  anonymous?: boolean;
+export interface SponsorList {
+  sponsors: Sponsor[];
 }

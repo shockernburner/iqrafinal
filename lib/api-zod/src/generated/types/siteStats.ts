@@ -6,7 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface DonationInput {
-  amount?: number;
-  anonymous?: boolean;
+export interface SiteStats {
+  pageVisits: number;
+  registeredUsers: number;
 }

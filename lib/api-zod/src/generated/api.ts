@@ -452,11 +452,113 @@ export const AddAdminTrainingResponse = zod.object({
  * @summary Create a Stripe checkout session for a donation
  */
 export const CreateDonationCheckoutBody = zod.object({
-  "amount": zod.number().optional()
+  "amount": zod.number().optional(),
+  "anonymous": zod.boolean().optional()
 })
 
 export const CreateDonationCheckoutResponse = zod.object({
   "url": zod.string().nullish()
+})
+
+
+/**
+ * @summary Get editable site content (public)
+ */
+export const GetSiteContentResponse = zod.object({
+  "hero": zod.object({
+  "title": zod.string(),
+  "subtitle": zod.string()
+}).optional(),
+  "pillars": zod.array(zod.object({
+  "title": zod.string(),
+  "body": zod.string()
+})).optional(),
+  "visionHero": zod.object({
+  "title": zod.string(),
+  "subtitle": zod.string()
+}).optional(),
+  "popup": zod.object({
+  "title": zod.string(),
+  "body": zod.string(),
+  "supportLabel": zod.string(),
+  "laterLabel": zod.string()
+}).optional()
+})
+
+
+/**
+ * @summary Public site stats (page visits, registered users)
+ */
+export const GetSiteStatsResponse = zod.object({
+  "pageVisits": zod.number(),
+  "registeredUsers": zod.number()
+})
+
+
+/**
+ * @summary Record a page visit and return updated stats
+ */
+export const RecordVisitResponse = zod.object({
+  "pageVisits": zod.number(),
+  "registeredUsers": zod.number()
+})
+
+
+/**
+ * @summary Public list of sponsors (no amounts, ranked high to low)
+ */
+export const GetSponsorsResponse = zod.object({
+  "sponsors": zod.array(zod.object({
+  "displayName": zod.string().nullable(),
+  "country": zod.string().nullable(),
+  "anonymous": zod.boolean()
+}))
+})
+
+
+/**
+ * @summary Update editable site content (admin)
+ */
+export const PutSiteContentBody = zod.object({
+  "hero": zod.object({
+  "title": zod.string(),
+  "subtitle": zod.string()
+}).optional(),
+  "pillars": zod.array(zod.object({
+  "title": zod.string(),
+  "body": zod.string()
+})).optional(),
+  "visionHero": zod.object({
+  "title": zod.string(),
+  "subtitle": zod.string()
+}).optional(),
+  "popup": zod.object({
+  "title": zod.string(),
+  "body": zod.string(),
+  "supportLabel": zod.string(),
+  "laterLabel": zod.string()
+}).optional()
+})
+
+export const PutSiteContentResponse = zod.object({
+  "hero": zod.object({
+  "title": zod.string(),
+  "subtitle": zod.string()
+}).optional(),
+  "pillars": zod.array(zod.object({
+  "title": zod.string(),
+  "body": zod.string()
+})).optional(),
+  "visionHero": zod.object({
+  "title": zod.string(),
+  "subtitle": zod.string()
+}).optional(),
+  "popup": zod.object({
+  "title": zod.string(),
+  "body": zod.string(),
+  "supportLabel": zod.string(),
+  "laterLabel": zod.string()
+}).optional()
 })
 
 

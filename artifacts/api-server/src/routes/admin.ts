@@ -11,6 +11,8 @@ import {
   ListAdminDocumentsResponse,
   ListAdminUsersResponse,
   ListAdminTrainingResponse,
+  PutSiteContentBody,
+  PutSiteContentResponse,
   StartAdminMaintenanceBody,
   StartAdminMaintenanceResponse,
   UpdateAdminDocumentBody,
@@ -276,6 +278,30 @@ router.post("/maintenance", (req, res) => {
   const body = StartAdminMaintenanceBody.parse(req.body);
   const result = startAdminMaintenance(body.action, req.user!.email);
   const data = StartAdminMaintenanceResponse.parse(result);
+  res.json(data);
+});
+
+router.put("/content", async (req, res) => {
+  const body = PutSiteContentBody.parse(req.body);
+  const entries = Object.entries(body).filter(([, value]) => value !== undefined);
+
+  for (const [key, value] of entries) {
+    await pool.query(
+      `INSERT INTO site_content (key, value, updated_by, updated_at)
+       VALUES ($1, $2::jsonb, $3, now())
+       ON CONFLICT (key) DO UPDATE
+         SET value = EXCLUDED.value, updated_by = EXCLUDED.updated_by, updated_at = now()`,
+      [key, JSON.stringify(value), req.user!.id],
+    );
+  }
+
+  const result = await pool.query<{ key: string; value: unknown }>(
+    "SELECT key, value FROM site_content",
+  );
+  const content: Record<string, unknown> = {};
+  for (const row of result.rows) content[row.key] = row.value;
+
+  const data = PutSiteContentResponse.parse(content);
   res.json(data);
 });
 

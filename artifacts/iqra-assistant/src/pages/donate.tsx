@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Heart, Loader2 } from "lucide-react";
 import { useCreateDonationCheckout } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
@@ -13,6 +14,7 @@ const PRESET_AMOUNTS = [10, 25, 50, 100];
 export default function Donate() {
   const [amount, setAmount] = useState<number>(25);
   const [customAmount, setCustomAmount] = useState<string>("");
+  const [anonymous, setAnonymous] = useState(false);
   const { toast } = useToast();
 
   const checkoutMutation = useCreateDonationCheckout({
@@ -37,7 +39,7 @@ export default function Donate() {
       return;
     }
     
-    checkoutMutation.mutate({ data: { amount: finalAmount } });
+    checkoutMutation.mutate({ data: { amount: finalAmount, anonymous } });
   };
 
   return (
@@ -95,6 +97,17 @@ export default function Donate() {
                   />
                 </div>
               </div>
+
+              <label className="flex items-center gap-3 pt-2 cursor-pointer">
+                <Checkbox
+                  checked={anonymous}
+                  onCheckedChange={(v) => setAnonymous(v === true)}
+                  data-testid="checkbox-anonymous"
+                />
+                <span className="text-sm text-muted-foreground">
+                  List me as anonymous on the sponsors page
+                </span>
+              </label>
             </CardContent>
             <CardFooter className="bg-muted/30 pt-6">
               <Button 

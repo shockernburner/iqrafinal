@@ -25,6 +25,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import AdminContentEditor from "@/components/admin-content-editor";
 
 export default function AdminDashboard() {
   const { toast } = useToast();
@@ -181,11 +182,12 @@ export default function AdminDashboard() {
           ) : null}
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 max-w-xl h-auto">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 max-w-2xl h-auto">
               <TabsTrigger value="documents">Knowledge Base</TabsTrigger>
               <TabsTrigger value="training">Training</TabsTrigger>
               <TabsTrigger value="maintenance">Maintenance</TabsTrigger>
               <TabsTrigger value="users">Users</TabsTrigger>
+              <TabsTrigger value="content">Landing Content</TabsTrigger>
             </TabsList>
             
             <TabsContent value="documents" className="mt-6">
@@ -486,6 +488,10 @@ export default function AdminDashboard() {
                   )}
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            <TabsContent value="content" className="mt-6">
+              <AdminContentEditor />
             </TabsContent>
           </Tabs>
 

@@ -6,6 +6,7 @@ import Landing from "@/pages/landing";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
 import OurVision from "@/pages/our-vision";
+import Sponsors from "@/pages/sponsors";
 import Terms from "@/pages/terms";
 import Privacy from "@/pages/privacy";
 import ForgotPassword from "@/pages/forgot-password";
@@ -66,6 +67,16 @@ export const PRERENDER_ROUTES: PrerenderedRoute[] = [
     robots: "index, follow",
     canonicalPath: "/our-vision",
     Component: OurVision,
+  },
+  {
+    path: "/sponsors",
+    outFile: "sponsors/index.html",
+    title: "Our Sponsors — IQRA Assistant",
+    description:
+      "The generous supporters whose donations keep IQRA Assistant free and growing for every seeker of Islamic guidance.",
+    robots: "index, follow",
+    canonicalPath: "/sponsors",
+    Component: Sponsors,
   },
   {
     path: "/terms",

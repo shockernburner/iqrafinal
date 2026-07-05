@@ -20,6 +20,8 @@ tags:
     description: Admin dashboard operations
   - name: donate
     description: Donations via Stripe
+  - name: content
+    description: Public site content, stats, and sponsors
   - name: voice
     description: Voice transcription
   - name: sources
@@ -729,6 +731,85 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /content:
+    get:
+      operationId: getSiteContent
+      tags: [content]
+      summary: Get editable site content (public)
+      responses:
+        "200":
+          description: Site content
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SiteContent"
+  /stats:
+    get:
+      operationId: getSiteStats
+      tags: [content]
+      summary: Public site stats (page visits, registered users)
+      responses:
+        "200":
+          description: Stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SiteStats"
+  /visit:
+    post:
+      operationId: recordVisit
+      tags: [content]
+      summary: Record a page visit and return updated stats
+      responses:
+        "200":
+          description: Stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SiteStats"
+  /sponsors:
+    get:
+      operationId: getSponsors
+      tags: [content]
+      summary: Public list of sponsors (no amounts, ranked high to low)
+      responses:
+        "200":
+          description: Sponsors
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SponsorList"
+  /admin/content:
+    put:
+      operationId: putSiteContent
+      tags: [admin]
+      summary: Update editable site content (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SiteContent"
+      responses:
+        "200":
+          description: Updated site content
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SiteContent"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Admin only
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /voice/transcribe:
     post:
       operationId: transcribeVoice
@@ -1301,11 +1382,81 @@ components:
       properties:
         amount:
           type: number
+        anonymous:
+          type: boolean
     DonationCheckout:
       type: object
       properties:
         url:
           type: ["string", "null"]
+
+    SiteHero:
+      type: object
+      required: [title, subtitle]
+      properties:
+        title:
+          type: string
+        subtitle:
+          type: string
+    SitePillar:
+      type: object
+      required: [title, body]
+      properties:
+        title:
+          type: string
+        body:
+          type: string
+    DonationPopup:
+      type: object
+      required: [title, body, supportLabel, laterLabel]
+      properties:
+        title:
+          type: string
+        body:
+          type: string
+        supportLabel:
+          type: string
+        laterLabel:
+          type: string
+    SiteContent:
+      type: object
+      properties:
+        hero:
+          $ref: "#/components/schemas/SiteHero"
+        pillars:
+          type: array
+          items:
+            $ref: "#/components/schemas/SitePillar"
+        visionHero:
+          $ref: "#/components/schemas/SiteHero"
+        popup:
+          $ref: "#/components/schemas/DonationPopup"
+    SiteStats:
+      type: object
+      required: [pageVisits, registeredUsers]
+      properties:
+        pageVisits:
+          type: integer
+        registeredUsers:
+          type: integer
+    Sponsor:
+      type: object
+      required: [displayName, country, anonymous]
+      properties:
+        displayName:
+          type: ["string", "null"]
+        country:
+          type: ["string", "null"]
+        anonymous:
+          type: boolean
+    SponsorList:
+      type: object
+      required: [sponsors]
+      properties:
+        sponsors:
+          type: array
+          items:
+            $ref: "#/components/schemas/Sponsor"
 
     VoiceUploadInput:
       type: object

@@ -14,10 +14,12 @@ import AdminDashboard from "@/pages/admin";
 import Terms from "@/pages/terms";
 import Privacy from "@/pages/privacy";
 import OurVision from "@/pages/our-vision";
+import Sponsors from "@/pages/sponsors";
 import ForgotPassword from "@/pages/forgot-password";
 import ResetPassword from "@/pages/reset-password";
 import LegalConsent from "@/components/legal-consent";
 import InstallPrompt from "@/components/install-prompt";
+import DonationPopup from "@/components/donation-popup";
 
 const queryClient = new QueryClient();
 
@@ -68,7 +70,12 @@ function Home() {
     return <LegalConsent />;
   }
 
-  return user ? <Chat /> : <Landing />;
+  return (
+    <>
+      {user ? <Chat /> : <Landing />}
+      <DonationPopup />
+    </>
+  );
 }
 
 function Router() {
@@ -79,6 +86,7 @@ function Router() {
       <Route path="/terms" component={Terms} />
       <Route path="/privacy" component={Privacy} />
       <Route path="/our-vision" component={OurVision} />
+      <Route path="/sponsors" component={Sponsors} />
       <Route path="/forgot-password" component={ForgotPassword} />
       <Route path="/reset-password" component={ResetPassword} />
       

@@ -51,6 +51,9 @@ import type {
   RegisterInput,
   ResetPasswordInput,
   Session,
+  SiteContent,
+  SiteStats,
+  SponsorList,
   TrainingDatasetUploadInput,
   TrainingDatasetUploadResult,
   TrainingRecordInput,
@@ -2057,6 +2060,377 @@ export const useCreateDonationCheckout = <TError = ErrorType<ErrorResponse>,
         TContext
       > => {
       return useMutation(getCreateDonationCheckoutMutationOptions(options));
+    }
+
+export const getGetSiteContentUrl = () => {
+
+
+
+
+  return `/api/content`
+}
+
+/**
+ * @summary Get editable site content (public)
+ */
+export const getSiteContent = async ( options?: RequestInit): Promise<SiteContent> => {
+
+  return customFetch<SiteContent>(getGetSiteContentUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSiteContentQueryKey = () => {
+    return [
+    `/api/content`
+    ] as const;
+    }
+
+
+export const getGetSiteContentQueryOptions = <TData = Awaited<ReturnType<typeof getSiteContent>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSiteContent>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSiteContentQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSiteContent>>> = ({ signal }) => getSiteContent({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSiteContent>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetSiteContentQueryResult = NonNullable<Awaited<ReturnType<typeof getSiteContent>>>
+export type GetSiteContentQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get editable site content (public)
+ */
+
+export function useGetSiteContent<TData = Awaited<ReturnType<typeof getSiteContent>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSiteContent>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetSiteContentQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetSiteStatsUrl = () => {
+
+
+
+
+  return `/api/stats`
+}
+
+/**
+ * @summary Public site stats (page visits, registered users)
+ */
+export const getSiteStats = async ( options?: RequestInit): Promise<SiteStats> => {
+
+  return customFetch<SiteStats>(getGetSiteStatsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSiteStatsQueryKey = () => {
+    return [
+    `/api/stats`
+    ] as const;
+    }
+
+
+export const getGetSiteStatsQueryOptions = <TData = Awaited<ReturnType<typeof getSiteStats>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSiteStats>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSiteStatsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSiteStats>>> = ({ signal }) => getSiteStats({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSiteStats>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetSiteStatsQueryResult = NonNullable<Awaited<ReturnType<typeof getSiteStats>>>
+export type GetSiteStatsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Public site stats (page visits, registered users)
+ */
+
+export function useGetSiteStats<TData = Awaited<ReturnType<typeof getSiteStats>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSiteStats>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetSiteStatsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getRecordVisitUrl = () => {
+
+
+
+
+  return `/api/visit`
+}
+
+/**
+ * @summary Record a page visit and return updated stats
+ */
+export const recordVisit = async ( options?: RequestInit): Promise<SiteStats> => {
+
+  return customFetch<SiteStats>(getRecordVisitUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getRecordVisitMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordVisit>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof recordVisit>>, TError,void, TContext> => {
+
+const mutationKey = ['recordVisit'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof recordVisit>>, void> = () => {
+
+
+          return  recordVisit(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RecordVisitMutationResult = NonNullable<Awaited<ReturnType<typeof recordVisit>>>
+
+    export type RecordVisitMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Record a page visit and return updated stats
+ */
+export const useRecordVisit = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordVisit>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof recordVisit>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getRecordVisitMutationOptions(options));
+    }
+
+export const getGetSponsorsUrl = () => {
+
+
+
+
+  return `/api/sponsors`
+}
+
+/**
+ * @summary Public list of sponsors (no amounts, ranked high to low)
+ */
+export const getSponsors = async ( options?: RequestInit): Promise<SponsorList> => {
+
+  return customFetch<SponsorList>(getGetSponsorsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSponsorsQueryKey = () => {
+    return [
+    `/api/sponsors`
+    ] as const;
+    }
+
+
+export const getGetSponsorsQueryOptions = <TData = Awaited<ReturnType<typeof getSponsors>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSponsors>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSponsorsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSponsors>>> = ({ signal }) => getSponsors({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSponsors>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetSponsorsQueryResult = NonNullable<Awaited<ReturnType<typeof getSponsors>>>
+export type GetSponsorsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Public list of sponsors (no amounts, ranked high to low)
+ */
+
+export function useGetSponsors<TData = Awaited<ReturnType<typeof getSponsors>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSponsors>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetSponsorsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getPutSiteContentUrl = () => {
+
+
+
+
+  return `/api/admin/content`
+}
+
+/**
+ * @summary Update editable site content (admin)
+ */
+export const putSiteContent = async (siteContent: SiteContent, options?: RequestInit): Promise<SiteContent> => {
+
+  return customFetch<SiteContent>(getPutSiteContentUrl(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(siteContent)
+  }
+);}
+
+
+
+
+export const getPutSiteContentMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putSiteContent>>, TError,{data: BodyType<SiteContent>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof putSiteContent>>, TError,{data: BodyType<SiteContent>}, TContext> => {
+
+const mutationKey = ['putSiteContent'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof putSiteContent>>, {data: BodyType<SiteContent>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  putSiteContent(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PutSiteContentMutationResult = NonNullable<Awaited<ReturnType<typeof putSiteContent>>>
+    export type PutSiteContentMutationBody = BodyType<SiteContent>
+    export type PutSiteContentMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Update editable site content (admin)
+ */
+export const usePutSiteContent = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putSiteContent>>, TError,{data: BodyType<SiteContent>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof putSiteContent>>,
+        TError,
+        {data: BodyType<SiteContent>},
+        TContext
+      > => {
+      return useMutation(getPutSiteContentMutationOptions(options));
     }
 
 export const getTranscribeVoiceUrl = () => {

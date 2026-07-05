@@ -415,11 +415,53 @@ export interface TrainingDatasetUploadResult {
 
 export interface DonationInput {
   amount?: number;
+  anonymous?: boolean;
 }
 
 export interface DonationCheckout {
   /** @nullable */
   url?: string | null;
+}
+
+export interface SiteHero {
+  title: string;
+  subtitle: string;
+}
+
+export interface SitePillar {
+  title: string;
+  body: string;
+}
+
+export interface DonationPopup {
+  title: string;
+  body: string;
+  supportLabel: string;
+  laterLabel: string;
+}
+
+export interface SiteContent {
+  hero?: SiteHero;
+  pillars?: SitePillar[];
+  visionHero?: SiteHero;
+  popup?: DonationPopup;
+}
+
+export interface SiteStats {
+  pageVisits: number;
+  registeredUsers: number;
+}
+
+export interface Sponsor {
+  /** @nullable */
+  displayName: string | null;
+  /** @nullable */
+  country: string | null;
+  anonymous: boolean;
+}
+
+export interface SponsorList {
+  sponsors: Sponsor[];
 }
 
 export interface VoiceUploadInput {

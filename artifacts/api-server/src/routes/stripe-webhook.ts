@@ -58,8 +58,23 @@ router.post("/", async (req, res) => {
 
     if (event.type === "checkout.session.completed") {
       const session = event.data.object as Stripe.Checkout.Session;
-      const email = session.customer_details?.email ?? session.customer_email;
+      const email = session.customer_details?.email ?? session.customer_email ?? null;
       const amountCents = session.amount_total ?? 0;
+      const currency = session.currency ?? "usd";
+      const userId = session.metadata?.userId ?? null;
+      const anonymous = session.metadata?.anonymous === "true";
+      const country =
+        session.customer_details?.address?.country ?? (session.metadata?.country || null);
+
+      if (amountCents > 0) {
+        await pool.query(
+          `INSERT INTO donations (user_id, session_id, email, amount_cents, currency, country, anonymous)
+           VALUES ($1, $2, $3, $4, $5, $6, $7)
+           ON CONFLICT (session_id) DO NOTHING`,
+          [userId, session.id, email, amountCents, currency, country, anonymous],
+        );
+      }
+
       if (email && amountCents > 0) {
         await sendDonationThankYouEmail(email, amountCents);
       }

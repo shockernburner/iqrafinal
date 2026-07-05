@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import logoPng from "@/assets/logo.png";
 import { useSeo } from "@/hooks/use-seo";
 import { VisionStructuredData } from "@/components/structured-data";
+import { useSiteContent } from "@/lib/site-content";
 import {
   BookOpen,
   Globe2,
@@ -119,6 +120,7 @@ const EXPANSION = [
 ];
 
 export default function OurVision() {
+  const { visionHero } = useSiteContent();
   useSeo({
     title: "Our Vision — IQRA Assistant",
     description:
@@ -152,13 +154,10 @@ export default function OurVision() {
             <TrendingUp className="w-4 h-4" /> Our Vision
           </span>
           <h1 className="mt-6 font-serif text-4xl sm:text-5xl font-bold leading-tight max-w-3xl mx-auto">
-            Grounded Islamic guidance, accessible to every believer
+            {visionHero.title}
           </h1>
           <p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto">
-            IQRA exists to make trustworthy, source-grounded guidance on Islamic ethics
-            and leadership available to anyone — from a first question to a lifetime of
-            reflection. Below is where we are headed over the next three years, and how
-            we plan to get there.
+            {visionHero.subtitle}
           </p>
         </section>
 
