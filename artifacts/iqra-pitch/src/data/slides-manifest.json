@@ -1,0 +1,98 @@
+[
+  {
+    "id": "9c16b4fe-ba28-497e-b40b-08f353421506",
+    "position": 1,
+    "filepath": "src/pages/slides/Cover.tsx",
+    "title": "Cover — Investment Proposal",
+    "description": "Title slide: IQRA wordmark, positioning line, seed round 2026, confidential.",
+    "speakerNotes": "Open calmly and with conviction. Let the title sit for a beat before you speak.\n\n- \"IQRA is authenticated Islamic knowledge, built for the age of generative AI.\"\n- \"We're a live product, not a concept. Today I'll show you the problem, what we've built, the market, and a specific ask.\"\n- Set the frame: this is a seed round, and everything I share is confidential.\n\nKeep it to ~20 seconds. Do not read the whole slide — say the one line and move."
+  },
+  {
+    "id": "841b9c11-3dab-40c8-be92-18066de03f06",
+    "position": 2,
+    "filepath": "src/pages/slides/ExecutiveSummary.tsx",
+    "title": "Executive Summary",
+    "description": "The whole argument in five lines: problem, solution, market, model, ask.",
+    "speakerNotes": "This is the whole pitch in five lines. If someone had to leave after one slide, this is the slide.\n\n- General AI answers faith questions probabilistically — it produces rulings no one can verify.\n- IQRA anchors every answer in authenticated sources and a verified chain of transmission, the Isnad.\n- The market is enormous: two billion Muslims and a $2.4 trillion Islamic economy.\n- The model scales in three steps — donations today, premium tooling next, B2B licensing after.\n- The ask: $2.5M to reach one million daily users and B2B revenue within 24 months.\n\nDeliver these as five clean statements, then say: \"Let me take each of these in turn.\""
+  },
+  {
+    "id": "b2e2bae6-7f9d-4354-936d-6dd1d8e854d2",
+    "position": 3,
+    "filepath": "src/pages/slides/Problem.tsx",
+    "title": "Problem",
+    "description": "Generative AI manufactures unverifiable religious rulings; doctrinal drift at scale.",
+    "speakerNotes": "Name the problem plainly. This is a trust problem, not a technology problem.\n\n- Large language models predict plausible text. They are not built to verify a ruling.\n- That produces doctrinal drift: fabricated citations, blended traditions, confident errors — at scale.\n- Two billion Muslims are already asking these questions online, and a wrong answer here carries real spiritual weight.\n- No mainstream assistant grounds its guidance in an authenticated chain of transmission.\n\nPause after the spiritual-weight line — it is the emotional center of the pitch. Cite Pew for the population figure."
+  },
+  {
+    "id": "2b9a1c74-b8b9-49a6-b8bc-93519ce961a4",
+    "position": 4,
+    "filepath": "src/pages/slides/Solution.tsx",
+    "title": "Solution",
+    "description": "Retrieval-grounded assistant, five domains, Isnad Board governance, built-in guardrails.",
+    "speakerNotes": "Now the answer. Emphasize that authenticity is architectural, not cosmetic.\n\n- IQRA is retrieval-grounded: every answer ties back to classical texts, not model guesswork.\n- It covers five domains — creed, jurisprudence of transactions, hadith authentication, ethics, and history.\n- An Isnad Board of verified scholars governs what enters the knowledge base — no synthetic or plagiarized content.\n- Guardrails are built in: a Zero Comparative Religion policy and a total ban on optimizing Haram activity.\n- Every answer is tagged with its scriptural anchor, so users can verify the source themselves.\n\nLand the point: \"The chain of transmission is the moat. Anyone can build a chatbot; almost no one can build the governance.\""
+  },
+  {
+    "id": "dd5e6fdf-612e-4a28-94ef-76c9d90f0953",
+    "position": 5,
+    "filepath": "src/pages/slides/Traction.tsx",
+    "title": "Traction",
+    "description": "Honest built/status table: live app, ingested KB, active Q&A, operational admin.",
+    "speakerNotes": "This is the credibility slide. Be precise and honest — no user-count claims.\n\n- The product is live at iqra.live: a web app and installable PWA, secure accounts, multi-thread chat.\n- The knowledge base holds 400+ classical source documents — about 58,000 searchable passages — already ingested.\n- 500 curated scholar-style Q&A pairs are actively guiding answer quality.\n- Donations, admin knowledge management, and analytics are operational.\n\nSay it directly: \"We are not pitching a slide deck. We are pitching a system that already works. The capital is to scale it, not to build it.\""
+  },
+  {
+    "id": "91e5138e-8640-41b4-b2e0-b7b50abd4595",
+    "position": 6,
+    "filepath": "src/pages/slides/Market.tsx",
+    "title": "Market",
+    "description": "Population and Islamic economy sizing with sources; near-term online wedge.",
+    "speakerNotes": "Size the opportunity with real numbers, then narrow to the wedge.\n\n- Two billion Muslims in 2025, rising to 2.2 billion by 2030 — growing about twice the global rate.\n- Muslim consumer spending across core sectors: $2.43 trillion in 2023, heading to $3.36 trillion by 2028.\n- Islamic finance assets: from $4.9 trillion to $7.5 trillion over the same window.\n- The near-term wedge is the billion-plus Muslims already online and underserved by authentic tools.\n\nAttribute the figures: Pew, DinarStandard's State of the Global Islamic Economy, and Standard Chartered. Then: \"We don't need the whole market — just the online, underserved edge of it.\""
+  },
+  {
+    "id": "6b63ab25-b3e3-42b8-a018-8e9816bdff64",
+    "position": 7,
+    "filepath": "src/pages/slides/BusinessModel.tsx",
+    "title": "Business Model",
+    "description": "Three phases: philanthropy, premium tooling, B2B licensing.",
+    "speakerNotes": "Walk the three phases as a sequence, not three bets at once.\n\n- Phase 1, today: in-app donations fund operations. It aligns with the mission and proves willingness to pay.\n- Phase 2: premium tooling — Zakat calculator, Halal investment checklist, estate planning, corporate Zakat audits.\n- Phase 3, Year 2 and beyond: B2B licensing — API access and compliance chatbots for Halal marketplaces and institutions.\n- Unit economics improve as we go: cost per query is targeted to fall about 40% over 12 months as knowledge confidence rises.\n\nBe clear the 40% is a management target, not a result yet. Frame B2B as the high-margin endgame."
+  },
+  {
+    "id": "0920cbfc-280f-42f5-8599-e9c8438d3c97",
+    "position": 8,
+    "filepath": "src/pages/slides/Growth.tsx",
+    "title": "Growth",
+    "description": "Three growth engines: community, product depth, partnerships; milestone path.",
+    "speakerNotes": "Explain how we get to a million daily users — three engines working together.\n\n- Community: mosque, university, and scholar networks. Source-cited answers are inherently shareable.\n- Product depth: premium tools convert engaged users, and the PWA install removes friction.\n- Partnerships: Islamic institutions and libraries give us both credibility and distribution.\n- The path: live product, to an engaged base, to one million daily users — the funded 24-month goal.\n\nSay explicitly that the million is a target, not a current number. Credibility depends on that honesty."
+  },
+  {
+    "id": "0e4c3331-56e5-41cd-a508-f51cae819fda",
+    "position": 9,
+    "filepath": "src/pages/slides/Expansion.tsx",
+    "title": "Expansion",
+    "description": "Expansion across knowledge, language, and market.",
+    "speakerNotes": "Show the roadmap on three axes so investors see durability.\n\n- Knowledge: from 400+ documents toward 100,000 authenticated primary sources, through library partnerships. This is the deepening moat.\n- Language: beyond English into Arabic, Urdu, and Bahasa — 60% of Muslims live in Asia-Pacific, so language is distribution.\n- Market: consumer app first, then B2B API and compliance tooling for the Halal economy.\n\nTie it back: \"Each axis compounds the others — more sources make better answers, more languages reach more users, and both make the B2B product more valuable.\""
+  },
+  {
+    "id": "fc8a0eaf-598c-4f32-be46-02af1a36ac86",
+    "position": 10,
+    "filepath": "src/pages/slides/Ask.tsx",
+    "title": "The Ask",
+    "description": "$2.5M seed for ~15% equity; use-of-funds breakdown and indicative terms.",
+    "speakerNotes": "Be direct and specific. Investors respect a clear number and a clear use of funds.\n\n- We are raising $2.5M in seed capital.\n- Allocation: 30% to Knowledge and the Isnad Board, 30% to engineering and AI infrastructure, 20% to product, 15% to growth and community, 5% held in reserve.\n- Indicative terms: $2.5M for roughly 15% equity, about $16.7M post-money, via SAFE or a priced round.\n- One condition on our side: values-aligned capital only. Partners uphold the Zero Comparative Religion policy and the Isnad Board's independence.\n\nDeliver the number without hedging. The values condition is a strength — it signals discipline, not naivety."
+  },
+  {
+    "id": "e4c66e46-b97f-4fdf-a724-57a49c76485e",
+    "position": 11,
+    "filepath": "src/pages/slides/Justification.tsx",
+    "title": "Justification",
+    "description": "Why $2.5M and why now: runway, defensibility, unit economics, B2B, right-sizing.",
+    "speakerNotes": "Answer the two questions every investor is holding: why this amount, and why now.\n\n- $2.5M buys about 24 months of runway — enough to hit the milestones you'd underwrite.\n- It funds the jump from 400+ to 100,000 authenticated sources, which is the core defensibility.\n- It targets the ~40% reduction in cost per query as knowledge confidence rises.\n- It stands up the B2B API alpha — the door to high-margin recurring revenue in Year 2 and beyond.\n- And it's right-sized: enough to reach scale and B2B, small enough to keep the round efficient and founder-aligned.\n\nClose this slide with: \"This is the smallest amount that still gets us to a fundable Series A.\""
+  },
+  {
+    "id": "79d3a7d2-28b4-45a5-ae4d-77d4212af504",
+    "position": 12,
+    "filepath": "src/pages/slides/Closing.tsx",
+    "title": "Closing",
+    "description": "Closing lockup: mission line, positioning, contact details.",
+    "speakerNotes": "Return to the mission. End on conviction, not logistics.\n\n- \"IQRA is an investment in the integrity of Islamic knowledge.\"\n- \"We hold the defensible position in authenticated Islamic AI — a live product, a governed knowledge base, and a clear path to revenue.\"\n- Give the contact and invite the next conversation: iqra.live, invest@iqra.live.\n\nStop talking after the mission line lands. Let the silence do the closing work, then open for questions."
+  }
+]

@@ -1,0 +1,74 @@
+[
+  {
+    "id": "05787936-5b22-4a7c-829d-28d2be17bb58",
+    "position": 1,
+    "filepath": "src/pages/slides/Cover.tsx",
+    "title": "Cover",
+    "description": "Title slide introducing the knowledge partnership proposal",
+    "speakerNotes": ""
+  },
+  {
+    "id": "2f678d95-1743-4169-9eb6-e72b28d00fe3",
+    "position": 2,
+    "filepath": "src/pages/slides/Mission.tsx",
+    "title": "Mission",
+    "description": "Why authentic knowledge must reach those who seek it",
+    "speakerNotes": ""
+  },
+  {
+    "id": "17154268-f57f-4c88-a751-8288f58901ed",
+    "position": 3,
+    "filepath": "src/pages/slides/Platform.tsx",
+    "title": "Platform",
+    "description": "What IQRA is: a live, governed, grounded platform",
+    "speakerNotes": ""
+  },
+  {
+    "id": "9108f591-156a-4320-8cfa-f7a59ee4b091",
+    "position": 4,
+    "filepath": "src/pages/slides/Seek.tsx",
+    "title": "Who We Seek",
+    "description": "The kinds of partners we are looking for",
+    "speakerNotes": ""
+  },
+  {
+    "id": "be641f6d-ecba-4428-b406-e65630a05e8a",
+    "position": 5,
+    "filepath": "src/pages/slides/Process.tsx",
+    "title": "How It Works",
+    "description": "Three-step flow from source to attributed answer",
+    "speakerNotes": ""
+  },
+  {
+    "id": "88e5ef37-77c3-498f-9eae-fba0eb87d30a",
+    "position": 6,
+    "filepath": "src/pages/slides/Benefits.tsx",
+    "title": "What Partners Gain",
+    "description": "Reach, preservation, attribution, no cost",
+    "speakerNotes": ""
+  },
+  {
+    "id": "d26b4dae-a292-45f7-af27-28877e69863f",
+    "position": 7,
+    "filepath": "src/pages/slides/Safeguards.tsx",
+    "title": "Our Commitments",
+    "description": "Copyright, no synthetic content, oversight, zero comparative religion",
+    "speakerNotes": ""
+  },
+  {
+    "id": "fbd801ed-33ce-454c-9f33-0d8fd40b64e4",
+    "position": 8,
+    "filepath": "src/pages/slides/Roadmap.tsx",
+    "title": "The Road Ahead",
+    "description": "Scaling sources and expanding languages",
+    "speakerNotes": ""
+  },
+  {
+    "id": "8389ada3-d208-488a-a3af-8caecce73f87",
+    "position": 9,
+    "filepath": "src/pages/slides/Closing.tsx",
+    "title": "Partner With Us",
+    "description": "Closing call to action with contact details",
+    "speakerNotes": ""
+  }
+]
