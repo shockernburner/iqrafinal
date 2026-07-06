@@ -18,3 +18,9 @@ id = "r1S7Je0nHK0bpojdVaLnc"
 uri = "file://exports/IQRA_ScaleUp_Cost_Model_Year1.xlsx"
 type = "table"
 title = "IQRA Year-1 Cost Model (Replit + You)"
+
+[[outputs]]
+id = "dLVS4mzjU6zKtO_GUj7WC"
+uri = "file://.local/outputs/iqra.pptx"
+type = "slides"
+title = "iqra.pptx"
