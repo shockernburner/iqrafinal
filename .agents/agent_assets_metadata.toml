@@ -24,3 +24,15 @@ id = "dLVS4mzjU6zKtO_GUj7WC"
 uri = "file://.local/outputs/iqra.pptx"
 type = "slides"
 title = "iqra.pptx"
+
+[[outputs]]
+id = "eqCq3XHBE7gmskAsbyzDB"
+uri = "file://exports/IQRA-Investment-Pitch-Script.pdf"
+type = "pdf"
+title = "IQRA Investment Pitch — Presenter Script (PDF)"
+
+[[outputs]]
+id = "u1hzlyGV4dHV86iJkvlzV"
+uri = "file://exports/IQRA-Investment-Pitch-Script.docx"
+type = "word_document"
+title = "IQRA Investment Pitch — Presenter Script (DOCX)"
