@@ -1,13 +1,15 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { AppLayout } from "@/components/layout";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import { Heart, Loader2 } from "lucide-react";
 import { useCreateDonationCheckout } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
+import { getLocalPayments, getDisplayDonation } from "@/lib/local-payments";
 
 const PRESET_AMOUNTS = [10, 25, 50, 100];
 
@@ -16,6 +18,14 @@ export default function Donate() {
   const [customAmount, setCustomAmount] = useState<string>("");
   const [anonymous, setAnonymous] = useState(false);
   const { toast } = useToast();
+
+  const local = useMemo(() => getLocalPayments(), []);
+
+  const usdAmount = (customAmount ? parseFloat(customAmount) : amount) || 0;
+  const display = useMemo(
+    () => getDisplayDonation(usdAmount > 0 ? usdAmount : 0, local.countryCode),
+    [usdAmount, local.countryCode],
+  );
 
   const checkoutMutation = useCreateDonationCheckout({
     mutation: {
@@ -38,8 +48,10 @@ export default function Donate() {
       toast({ title: "Invalid Amount", description: "Please enter a valid donation amount.", variant: "destructive" });
       return;
     }
-    
-    checkoutMutation.mutate({ data: { amount: finalAmount, anonymous } });
+
+    checkoutMutation.mutate({
+      data: { amount: finalAmount, anonymous, ...(local.countryCode ? { country: local.countryCode } : {}) },
+    });
   };
 
   return (
@@ -98,6 +110,32 @@ export default function Donate() {
                 </div>
               </div>
 
+              {display.isLocal && usdAmount > 0 && (
+                <p className="text-sm text-muted-foreground">
+                  You'll be charged approximately{" "}
+                  <span className="font-medium text-foreground">{display.formatted}</span>{" "}
+                  in your local currency.
+                </p>
+              )}
+
+              <div className="rounded-lg border border-border/50 bg-muted/30 p-4 space-y-3">
+                <p className="text-sm font-medium text-foreground">
+                  {local.countryName
+                    ? `Payment methods available in ${local.flag} ${local.countryName}`
+                    : "Available payment methods"}
+                </p>
+                <div className="flex flex-wrap gap-2" data-testid="list-payment-methods">
+                  {local.methods.map((method) => (
+                    <Badge key={method} variant="secondary" className="font-normal">
+                      {method}
+                    </Badge>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  The exact options shown at checkout depend on your device and browser.
+                </p>
+              </div>
+
               <label className="flex items-center gap-3 pt-2 cursor-pointer">
                 <Checkbox
                   checked={anonymous}
@@ -119,7 +157,7 @@ export default function Donate() {
                 {checkoutMutation.isPending ? (
                   <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Processing...</>
                 ) : (
-                  <>Donate ${(customAmount ? parseFloat(customAmount) : amount) || 0}</>
+                  <>Donate ${usdAmount}</>
                 )}
               </Button>
             </CardFooter>

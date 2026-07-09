@@ -497,7 +497,8 @@ export const AddAdminTrainingResponse = zod.object({
  */
 export const CreateDonationCheckoutBody = zod.object({
   "amount": zod.number().optional(),
-  "anonymous": zod.boolean().optional()
+  "anonymous": zod.boolean().optional(),
+  "country": zod.string().optional().describe('ISO-3166 alpha-2 country hint from the client (device timezone). The server maps it to a local currency so Stripe can offer local payment methods; it only ever changes the charged currency, never the underlying USD value.')
 })
 
 export const CreateDonationCheckoutResponse = zod.object({

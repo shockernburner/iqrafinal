@@ -9,4 +9,6 @@
 export interface DonationInput {
   amount?: number;
   anonymous?: boolean;
+  /** ISO-3166 alpha-2 country hint from the client (device timezone). The server maps it to a local currency so Stripe can offer local payment methods; it only ever changes the charged currency, never the underlying USD value. */
+  country?: string;
 }

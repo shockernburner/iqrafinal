@@ -54,12 +54,12 @@ router.post("/", async (req, res) => {
 
     if (event.type === "checkout.session.completed") {
       const session = event.data.object as Stripe.Checkout.Session;
-      const { email, amountCents } = donationFromSession(session);
+      const { email, amountUsdCents } = donationFromSession(session);
 
       await recordDonationFromSession(session);
 
-      if (email && amountCents > 0) {
-        await sendDonationThankYouEmail(email, amountCents);
+      if (email && amountUsdCents > 0) {
+        await sendDonationThankYouEmail(email, amountUsdCents);
       }
     }
 
