@@ -9,5 +9,6 @@
 - [Express sub-router mount prefix](express-subrouter-mount-prefix.md) — never bare-mount a sub-router with router-level auth middleware; its middleware runs for ALL paths and 403s unrelated routes.
 - [Replit secrets global scope](replit-secrets-global-scope.md) — secrets are shared dev/prod; a "test-only" key swap hits production on republish, and Autoscale needs a republish to pick up changes.
 - [IQRA Autoscale vs Reserved VM decision](iqra-autoscale-vs-vm-decision.md) — user deliberately deployed on Autoscale despite the in-process ingestion worker needing an always-on process; don't silently "fix" this.
+- [Multilingual chat](multilingual-chat.md) — assistant mirrors the user's language via the SYSTEM_PROMPT Language Protocol; deterministic/canned responses must be routed through `localizeMessage` or they leak English.
 - [IQRA separate prod DB & donation reconcile](iqra-prod-db-and-donation-reconcile.md) — dev/prod DBs are SEPARATE and prod is read-only; write prod data via idempotent boot routines (applies on redeploy); reconcile lost donations from stripe_events.
 - [Prerender public route coupling](prerender-public-route-coupling.md) — a new crawlable public page needs App.tsx route + entry-server PRERENDER_ROUTES + artifact.toml rewrite in lockstep.

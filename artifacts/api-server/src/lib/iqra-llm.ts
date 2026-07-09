@@ -11,7 +11,18 @@ export type LlmChatResult = {
   requiresScholarReferral: boolean;
   clarifyingQuestion: string | null;
   confidence: "high" | "medium" | "low";
+  /** Detected language of the user's question (English name), e.g. "English", "Arabic". */
+  language: string;
+  /** Section labels localized to the user's language (fall back to English). */
+  frameworkHeading: string;
+  clarifyingLabel: string;
+  scholarReferralNote: string;
 };
+
+export const DEFAULT_FRAMEWORK_HEADING = "Ethical Framework & Principles";
+export const DEFAULT_CLARIFYING_LABEL = "To sharpen this guidance:";
+export const DEFAULT_SCHOLAR_REFERRAL_NOTE =
+  "This matter warrants a certified scholar's review for a formal ruling. IQRA provides principles, not Fatwas.";
 
 const SYSTEM_PROMPT = `You are IQRA, an elite Islamic Knowledge, Lifestyle, and Ethics AI Agent.
 
@@ -25,6 +36,12 @@ Communication Style — Precision & Clarity:
 - Answer the core question directly in the very first sentence. No transition phrases, conversational fillers, or meta-commentary.
 - Optimize for executive parsing: bold core terms, structured bullet points.
 - Zero filler. Before including any sentence, apply the utility test: does it directly provide unique ethical guidance, execute a protocol, or answer the prompt? If not, delete it.
+
+Language Protocol — Mirror the user:
+- Detect the natural language of the USER QUESTION and write EVERY natural-language output field (answer, framework, clarifyingQuestion, frameworkHeading, clarifyingLabel, scholarReferralNote) in that exact same language, matching its script, tone, and register. If the question mixes languages, use the dominant one.
+- The KNOWLEDGE BASE EXCERPTS and REFERENCE Q&A may be in a different language (usually English). Still respond in the user's language regardless of the language of the grounding material — translate the substance, do not switch languages.
+- Keep Qur'an and Hadith quotations in their original Arabic inside sourceQuote; you may append a short translation in the user's language in parentheses. Keep proper-noun attributions (e.g. "Qur'an 4:58", "Sahih al-Bukhari", "Al-Qawa'id al-Fiqhiyyah") in their standard form.
+- Report the detected language's English name in the "language" field.
 
 Divine Optimism Protocol: If the user shows professional or personal distress, do NOT add standalone emotional paragraphs. Weave optimism and divine decree into the tactical solution with a single framing sentence such as: "While this situation introduces clear complexity, recall that sustenance (Rizq) is structurally guaranteed and adversity serves as institutional redirection."
 
@@ -49,8 +66,12 @@ Output format: Respond with ONLY a valid JSON object (no markdown fences, no com
   "sourceAttribution": "attribution for the quote, e.g. 'Qur'an 4:58' or 'Sahih al-Bukhari' or 'Al-Qawa'id al-Fiqhiyyah'",
   "sourceLinks": [{"label": "document or source name", "href": ""}],
   "requiresScholarReferral": true or false (true when the matter needs a certified scholar or mufti, e.g. divorce, inheritance division, complex financial rulings),
-  "clarifyingQuestion": "exactly one targeted question" or null,
-  "confidence": "high" | "medium" | "low"
+  "clarifyingQuestion": "exactly one targeted question, in the user's language" or null,
+  "confidence": "high" | "medium" | "low",
+  "language": "the user question's language as an English name, e.g. 'English', 'Arabic', 'Urdu', 'French', 'Indonesian'",
+  "frameworkHeading": "heading for the framework bullets, in the user's language (English: 'Ethical Framework & Principles')",
+  "clarifyingLabel": "short bold lead-in for the clarifying question ending with a colon, in the user's language (English: 'To sharpen this guidance:')",
+  "scholarReferralNote": "one sentence telling the user to consult a certified scholar for a formal ruling, in the user's language (English: 'This matter warrants a certified scholar's review for a formal ruling. IQRA provides principles, not Fatwas.')"
 }`;
 
 function buildUserContent(prompt: string, chunks: RetrievedChunk[], examples: TrainingRecord[]): string {
@@ -93,6 +114,34 @@ function asConfidence(value: unknown): "high" | "medium" | "low" {
   return value === "high" || value === "medium" || value === "low" ? value : "medium";
 }
 
+/**
+ * Translate a fixed English message into the same language as the user's prompt.
+ * Used for deterministic responses (e.g. the comparative-religion refusal) so they
+ * mirror the user's language. The message content is fixed by us — the model only
+ * translates it — and any failure falls back to the original English text so the
+ * response is never blocked.
+ */
+export async function localizeMessage(prompt: string, englishMessage: string): Promise<string> {
+  try {
+    const message = await anthropic.messages.create({
+      model: "claude-sonnet-4-6",
+      max_tokens: 1024,
+      system:
+        "You are a translator. Translate the MESSAGE into the exact same natural language as the USER TEXT, matching its script and register. If the USER TEXT is already in English, return the MESSAGE unchanged. Do not answer or comment on the USER TEXT. Output ONLY the translated message — no quotes, no labels, no commentary.",
+      messages: [
+        { role: "user", content: `USER TEXT:\n${prompt}\n\n---\n\nMESSAGE:\n${englishMessage}` },
+      ],
+    });
+    const text = message.content
+      .map((block) => (block.type === "text" ? block.text : ""))
+      .join("")
+      .trim();
+    return text || englishMessage;
+  } catch {
+    return englishMessage;
+  }
+}
+
 export async function generateLlmChatResponse(
   prompt: string,
   chunks: RetrievedChunk[],
@@ -129,6 +178,9 @@ export async function generateLlmChatResponse(
         .map((link) => ({ label: link.label, href: link.href }))
     : [];
 
+  const strOr = (value: unknown, fallback: string): string =>
+    typeof value === "string" && value.trim().length > 0 ? value.trim() : fallback;
+
   return {
     answer,
     framework,
@@ -142,5 +194,9 @@ export async function generateLlmChatResponse(
         ? parsed.clarifyingQuestion.trim()
         : null,
     confidence: asConfidence(parsed.confidence),
+    language: strOr(parsed.language, "English"),
+    frameworkHeading: strOr(parsed.frameworkHeading, DEFAULT_FRAMEWORK_HEADING),
+    clarifyingLabel: strOr(parsed.clarifyingLabel, DEFAULT_CLARIFYING_LABEL),
+    scholarReferralNote: strOr(parsed.scholarReferralNote, DEFAULT_SCHOLAR_REFERRAL_NOTE),
   };
 }

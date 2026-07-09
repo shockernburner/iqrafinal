@@ -2,7 +2,7 @@ import { assessIqraPolicy, COMPARATIVE_RELIGION_REFUSAL } from "./iqra-policy";
 import { formatBasmala } from "./iqra-response";
 import { searchKnowledgeChunks } from "./retrieval";
 import { findRelevantTrainingRecords } from "./training-data";
-import { generateLlmChatResponse } from "./iqra-llm";
+import { generateLlmChatResponse, localizeMessage } from "./iqra-llm";
 
 export type ChatApiPayload = {
   basmala: string;
@@ -28,15 +28,18 @@ function composeDisplayMarkdown(args: {
   basmala: string;
   answer: string;
   framework: string[];
+  frameworkHeading: string;
   sourceQuote: string;
   sourceAttribution: string;
   clarifyingQuestion: string | null;
+  clarifyingLabel: string;
   requiresScholarReferral: boolean;
+  scholarReferralNote: string;
 }): string {
   const parts: string[] = [args.basmala, "", args.answer];
 
   if (args.framework.length > 0) {
-    parts.push("", "**Ethical Framework & Principles**", "");
+    parts.push("", `**${args.frameworkHeading}**`, "");
     for (const item of args.framework) {
       parts.push(`- ${item}`);
     }
@@ -50,14 +53,11 @@ function composeDisplayMarkdown(args: {
   }
 
   if (args.clarifyingQuestion) {
-    parts.push("", `**To sharpen this guidance:** ${args.clarifyingQuestion}`);
+    parts.push("", `**${args.clarifyingLabel}** ${args.clarifyingQuestion}`);
   }
 
   if (args.requiresScholarReferral) {
-    parts.push(
-      "",
-      "_This matter warrants a certified scholar's review for a formal ruling. IQRA provides principles, not Fatwas._",
-    );
+    parts.push("", `_${args.scholarReferralNote}_`);
   }
 
   return parts.join("\n");
@@ -69,7 +69,7 @@ export async function generateIqraChatResponse(prompt: string): Promise<ChatApiP
   if (policy.requiresComparativeReligionRefusal) {
     return {
       basmala: formatBasmala(),
-      directAnswer: COMPARATIVE_RELIGION_REFUSAL,
+      directAnswer: await localizeMessage(prompt, COMPARATIVE_RELIGION_REFUSAL),
       framework: ["Scope: IQRA only addresses Islamic principles, lifestyle, and ethics"],
       source: "IQRA system policy",
       sourceLinks: [],
@@ -113,10 +113,13 @@ export async function generateIqraChatResponse(prompt: string): Promise<ChatApiP
       basmala,
       answer: llm.answer,
       framework: llm.framework,
+      frameworkHeading: llm.frameworkHeading,
       sourceQuote: llm.sourceQuote,
       sourceAttribution: llm.sourceAttribution,
       clarifyingQuestion: llm.clarifyingQuestion,
+      clarifyingLabel: llm.clarifyingLabel,
       requiresScholarReferral,
+      scholarReferralNote: llm.scholarReferralNote,
     }),
     framework: llm.framework,
     source,
