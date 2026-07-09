@@ -47,10 +47,6 @@ from = "/reset-password"
 to = "/reset-password/index.html"
 
 [[services.production.rewrites]]
-from = "/our-vision"
-to = "/our-vision/index.html"
-
-[[services.production.rewrites]]
 from = "/sponsors"
 to = "/sponsors/index.html"
 

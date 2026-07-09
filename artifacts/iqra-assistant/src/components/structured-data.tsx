@@ -1,7 +1,7 @@
 // Schema.org JSON-LD structured data for the public, prerendered marketing
 // pages. These components render a <script type="application/ld+json"> node
 // directly in the page markup so the schema is present in the very first HTML
-// response (the "/" and "/our-vision" routes are prerendered at build time via
+// response (the "/" route is prerendered at build time via
 // scripts/prerender.mjs), letting search engines and AI crawlers understand the
 // brand, mission, and page role without executing JavaScript.
 
@@ -51,31 +51,6 @@ export function HomeStructuredData() {
       data={{
         "@context": "https://schema.org",
         "@graph": [organizationNode, websiteNode],
-      }}
-    />
-  );
-}
-
-/** AboutPage schema describing the mission and organization for /our-vision. */
-export function VisionStructuredData() {
-  return (
-    <JsonLd
-      data={{
-        "@context": "https://schema.org",
-        "@graph": [
-          organizationNode,
-          {
-            "@type": "AboutPage",
-            "@id": `${SITE_ORIGIN}/our-vision#aboutpage`,
-            url: `${SITE_ORIGIN}/our-vision`,
-            name: "Our Vision — IQRA Assistant",
-            description:
-              "IQRA Assistant's vision, illustrative three-year growth model, and expansion plan across the Gulf, MENA, and Southeast Asia.",
-            isPartOf: { "@id": WEBSITE_ID },
-            about: { "@id": ORG_ID },
-            inLanguage: "en",
-          },
-        ],
       }}
     />
   );

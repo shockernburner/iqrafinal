@@ -9,7 +9,6 @@ IQRA is not a general-purpose chatbot and does not compare or rank religions; it
 ## Primary pages
 
 - [Home / Chat with IQRA](https://iqra.live/): Overview of the assistant and entry point to start a conversation.
-- [Our Vision](https://iqra.live/our-vision): The mission and purpose behind IQRA.
 
 ## Reference pages
 

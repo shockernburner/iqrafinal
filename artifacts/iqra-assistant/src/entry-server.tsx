@@ -5,7 +5,6 @@ import { Router as WouterRouter } from "wouter";
 import Landing from "@/pages/landing";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
-import OurVision from "@/pages/our-vision";
 import Sponsors from "@/pages/sponsors";
 import Terms from "@/pages/terms";
 import Privacy from "@/pages/privacy";
@@ -57,16 +56,6 @@ export const PRERENDER_ROUTES: PrerenderedRoute[] = [
     robots: "noindex, follow",
     canonicalPath: "/register",
     Component: Register,
-  },
-  {
-    path: "/our-vision",
-    outFile: "our-vision/index.html",
-    title: "Our Vision — IQRA Assistant",
-    description:
-      "IQRA Assistant's vision, illustrative three-year growth model, and expansion plan across the Gulf, MENA, and Southeast Asia.",
-    robots: "index, follow",
-    canonicalPath: "/our-vision",
-    Component: OurVision,
   },
   {
     path: "/sponsors",

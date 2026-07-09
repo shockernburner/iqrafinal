@@ -121,36 +121,6 @@ export default function AdminContentEditor() {
 
       <Card>
         <CardHeader className="border-b pb-4">
-          <CardTitle>Vision Hero</CardTitle>
-          <CardDescription>The headline and intro at the top of the "Our Vision" page.</CardDescription>
-        </CardHeader>
-        <CardContent className="pt-6 space-y-4">
-          <div className="space-y-2">
-            <Label>Title</Label>
-            <Input
-              value={content.visionHero.title}
-              onChange={(e) =>
-                setContent((c) => ({ ...c, visionHero: { ...c.visionHero, title: e.target.value } }))
-              }
-              data-testid="input-vision-title"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Subtitle</Label>
-            <Textarea
-              rows={3}
-              value={content.visionHero.subtitle}
-              onChange={(e) =>
-                setContent((c) => ({ ...c, visionHero: { ...c.visionHero, subtitle: e.target.value } }))
-              }
-              data-testid="input-vision-subtitle"
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="border-b pb-4">
           <CardTitle>Donation Popup</CardTitle>
           <CardDescription>The support prompt shown to landing-page visitors.</CardDescription>
         </CardHeader>

@@ -27,9 +27,6 @@ export default function Sponsors() {
           <span className="font-serif text-xl font-bold text-foreground">IQRA Assistant</span>
         </Link>
         <nav className="flex items-center gap-3">
-          <Link href="/our-vision">
-            <Button variant="ghost">Our Vision</Button>
-          </Link>
           <Link href="/donate">
             <Button data-testid="link-nav-donate">
               <Heart className="w-4 h-4 mr-2" /> Donate
@@ -95,7 +92,6 @@ export default function Sponsors() {
 
       <footer className="border-t border-border/50 py-8">
         <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground mb-3">
-          <Link href="/our-vision" className="hover:text-primary hover:underline">Our Vision</Link>
           <Link href="/privacy" className="hover:text-primary hover:underline">Privacy Policy</Link>
           <Link href="/terms" className="hover:text-primary hover:underline">Terms of Service</Link>
           <a href="mailto:contact@iqra.live" className="hover:text-primary hover:underline">Contact</a>

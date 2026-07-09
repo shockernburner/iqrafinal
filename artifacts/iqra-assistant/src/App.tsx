@@ -13,7 +13,6 @@ import ThankYou from "@/pages/thank-you";
 import AdminDashboard from "@/pages/admin";
 import Terms from "@/pages/terms";
 import Privacy from "@/pages/privacy";
-import OurVision from "@/pages/our-vision";
 import Sponsors from "@/pages/sponsors";
 import ForgotPassword from "@/pages/forgot-password";
 import ResetPassword from "@/pages/reset-password";
@@ -85,7 +84,6 @@ function Router() {
       <Route path="/register" component={Register} />
       <Route path="/terms" component={Terms} />
       <Route path="/privacy" component={Privacy} />
-      <Route path="/our-vision" component={OurVision} />
       <Route path="/sponsors" component={Sponsors} />
       <Route path="/forgot-password" component={ForgotPassword} />
       <Route path="/reset-password" component={ResetPassword} />

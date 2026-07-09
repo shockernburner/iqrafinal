@@ -142,9 +142,6 @@ export default function Landing() {
           <span className="font-serif text-xl font-bold text-foreground">IQRA Assistant</span>
         </div>
         <nav className="flex items-center gap-3">
-          <Link href="/our-vision">
-            <Button variant="ghost" data-testid="link-nav-vision">Our Vision</Button>
-          </Link>
           <Link href="/sponsors">
             <Button variant="ghost" data-testid="link-nav-sponsors">Our Sponsors</Button>
           </Link>
@@ -200,7 +197,6 @@ export default function Landing() {
 
       <footer className="border-t border-border/50 py-8">
         <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground mb-3">
-          <Link href="/our-vision" className="hover:text-primary hover:underline">Our Vision</Link>
           <Link href="/sponsors" className="hover:text-primary hover:underline">Our Sponsors</Link>
           <Link href="/privacy" className="hover:text-primary hover:underline">Privacy Policy</Link>
           <Link href="/terms" className="hover:text-primary hover:underline">Terms of Service</Link>
