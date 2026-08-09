@@ -41,6 +41,13 @@ async function writeKnowledgeObject(storageKey: string, bytes: Buffer, contentTy
   await bucket.file(objectName).save(bytes, { contentType, resumable: false });
 }
 
+export async function deleteKnowledgeObject(storageKey: string): Promise<void> {
+  const { bucketName, prefix } = getKnowledgeBucketAndPrefix();
+  const objectName = `${prefix}/${storageKey}`;
+  const bucket = objectStorageClient.bucket(bucketName);
+  await bucket.file(objectName).delete({ ignoreNotFound: true });
+}
+
 export async function readKnowledgeObject(storageKey: string): Promise<Buffer> {
   const { bucketName, prefix } = getKnowledgeBucketAndPrefix();
   const objectName = `${prefix}/${storageKey}`;

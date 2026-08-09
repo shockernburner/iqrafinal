@@ -359,11 +359,25 @@ router.patch("/documents/:id", async (req, res) => {
   } else if (body.action === "deactivate") {
     await pool.query("UPDATE documents SET status = 'inactive', updated_at = now() WHERE id = $1", [params.id]);
   } else if (body.action === "retry") {
-    await pool.query(
+    // Only failed jobs on failed versions are retryable. Succeeded versions have
+    // had their original file purged from storage (storage-saving policy), so
+    // re-queuing them would fail and clobber a healthy indexed document. The
+    // status predicates also prevent double-queuing a job that is already
+    // queued or processing.
+    const retried = await pool.query(
       `UPDATE ingestion_jobs SET status = 'queued', retry_count = retry_count + 1, error_message = NULL, updated_at = now()
-       WHERE document_version_id = (SELECT current_version_id FROM documents WHERE id = $1)`,
+       WHERE document_version_id = (SELECT current_version_id FROM documents WHERE id = $1)
+         AND status = 'failed'
+         AND document_version_id IN (SELECT id FROM document_versions WHERE status = 'failed')`,
       [params.id],
     );
+    if (retried.rowCount === 0) {
+      res.status(409).json({
+        error:
+          "Only failed documents can be retried. Indexed documents no longer keep their original file — re-upload to re-index.",
+      });
+      return;
+    }
   }
 
   const data = UpdateAdminDocumentResponse.parse({ ok: true });

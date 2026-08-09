@@ -2,7 +2,7 @@ import { PDFParse } from "pdf-parse";
 import mammoth from "mammoth";
 import { pool } from "@workspace/db";
 import { logger } from "./logger";
-import { readKnowledgeObject } from "./knowledge-upload";
+import { deleteKnowledgeObject, readKnowledgeObject } from "./knowledge-upload";
 
 const chunkChars = Number(process.env.INGESTION_CHUNK_CHARS ?? 2600);
 const overlapChars = Number(process.env.INGESTION_CHUNK_OVERLAP_CHARS ?? 350);
@@ -160,6 +160,15 @@ async function processJob(job: ClaimedJob) {
       { jobId: job.id, versionId: version.id, chunks: extracted.chunks.length },
       "Ingestion job succeeded",
     );
+    // Storage-saving policy: once a document is fully indexed, the original
+    // file is no longer needed (chat only reads document_chunks). Delete it
+    // from object storage, best-effort — a failure here never fails the job.
+    try {
+      await deleteKnowledgeObject(version.storage_key);
+      logger.info({ versionId: version.id }, "Deleted original file from storage after indexing");
+    } catch (error) {
+      logger.warn({ versionId: version.id, err: error }, "Failed to delete original file from storage");
+    }
   } catch (error) {
     await client.query("ROLLBACK").catch(() => undefined);
     const message = error instanceof Error ? error.message : "Unknown ingestion failure.";
