@@ -11,4 +11,5 @@ Rule: after a knowledge document version reaches `status='active'`, its original
 - Never build features that read originals of active versions (download, re-ingest, embeddings backfill) without first defining a re-upload/source-retention policy — the bytes are gone.
 - Admin document `retry` must stay restricted to failed jobs on failed versions (failed versions DO keep their file); loosening it re-introduces the bug where retrying a succeeded job clobbers a healthy version to `failed`.
 - sha256 duplicate detection is DB-based and unaffected by object deletion.
-- Prod uses the same shared bucket but a separate DB; prod-uploaded originals are only auto-deleted after a republish ships the new worker, and any pre-existing prod originals need a prod-side purge run.
+- Prod uses the same shared bucket but a separate DB. Verified (Aug 2026): prod has ZERO knowledge documents — all uploads happened in dev, so no prod-side purge was ever needed. Bucket's `knowledge/` prefix holds only the failed dev versions' files; orphan objects unreferenced by either DB can be safely deleted.
+- Prod-uploaded originals auto-delete only after a republish ships the auto-delete worker.
