@@ -402,6 +402,32 @@ export const UploadAdminDocumentResponse = zod.object({
 
 
 /**
+ * @summary Upload multiple knowledge base documents in one batch (total size limited)
+ */
+export const uploadAdminDocumentsBatchBodyFilesMax = 50;
+
+
+
+export const UploadAdminDocumentsBatchBody = zod.object({
+  "files": zod.array(zod.instanceof(File)).max(uploadAdminDocumentsBatchBodyFilesMax)
+}).describe('Up to 50 files; the combined size of all files must not exceed 50 MB.')
+
+export const UploadAdminDocumentsBatchResponse = zod.object({
+  "results": zod.array(zod.object({
+  "fileName": zod.string(),
+  "ok": zod.boolean(),
+  "error": zod.string().nullish(),
+  "documentId": zod.string().nullish(),
+  "versionId": zod.string().nullish(),
+  "jobId": zod.string().nullish(),
+  "ingestionStatus": zod.string().nullish()
+})),
+  "uploadedCount": zod.number(),
+  "failedCount": zod.number()
+})
+
+
+/**
  * @summary Bulk upload a training dataset (Excel .xlsx or .csv)
  */
 export const UploadAdminTrainingDatasetBody = zod.object({

@@ -40,6 +40,8 @@ import type {
   ChatThreadInput,
   ChatThreadList,
   ChatTurnInput,
+  DocumentBatchUploadInput,
+  DocumentBatchUploadResult,
   DocumentUploadInput,
   DocumentUploadResult,
   DonationCheckout,
@@ -1780,6 +1782,78 @@ export const useUploadAdminDocument = <TError = ErrorType<ErrorResponse>,
         TContext
       > => {
       return useMutation(getUploadAdminDocumentMutationOptions(options));
+    }
+
+export const getUploadAdminDocumentsBatchUrl = () => {
+
+
+
+
+  return `/api/admin/documents/upload-batch`
+}
+
+/**
+ * @summary Upload multiple knowledge base documents in one batch (total size limited)
+ */
+export const uploadAdminDocumentsBatch = async (documentBatchUploadInput: DocumentBatchUploadInput, options?: RequestInit): Promise<DocumentBatchUploadResult> => {
+    const formData = new FormData();
+documentBatchUploadInput.files.forEach(value => formData.append(`files`, value));
+
+  return customFetch<DocumentBatchUploadResult>(getUploadAdminDocumentsBatchUrl(),
+  {
+    ...options,
+    method: 'POST'
+    ,
+    body: formData
+  }
+);}
+
+
+
+
+export const getUploadAdminDocumentsBatchMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof uploadAdminDocumentsBatch>>, TError,{data: BodyType<DocumentBatchUploadInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof uploadAdminDocumentsBatch>>, TError,{data: BodyType<DocumentBatchUploadInput>}, TContext> => {
+
+const mutationKey = ['uploadAdminDocumentsBatch'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof uploadAdminDocumentsBatch>>, {data: BodyType<DocumentBatchUploadInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  uploadAdminDocumentsBatch(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UploadAdminDocumentsBatchMutationResult = NonNullable<Awaited<ReturnType<typeof uploadAdminDocumentsBatch>>>
+    export type UploadAdminDocumentsBatchMutationBody = BodyType<DocumentBatchUploadInput>
+    export type UploadAdminDocumentsBatchMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Upload multiple knowledge base documents in one batch (total size limited)
+ */
+export const useUploadAdminDocumentsBatch = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof uploadAdminDocumentsBatch>>, TError,{data: BodyType<DocumentBatchUploadInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof uploadAdminDocumentsBatch>>,
+        TError,
+        {data: BodyType<DocumentBatchUploadInput>},
+        TContext
+      > => {
+      return useMutation(getUploadAdminDocumentsBatchMutationOptions(options));
     }
 
 export const getUploadAdminTrainingDatasetUrl = () => {

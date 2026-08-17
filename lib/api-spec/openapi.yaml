@@ -606,6 +606,42 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /admin/documents/upload-batch:
+    post:
+      operationId: uploadAdminDocumentsBatch
+      tags: [admin]
+      summary: Upload multiple knowledge base documents in one batch (total size limited)
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/DocumentBatchUploadInput"
+      responses:
+        "200":
+          description: Batch processed (per-file results; some files may have failed)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentBatchUploadResult"
+        "400":
+          description: Invalid upload (no files, or total size over the limit)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Admin only
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /admin/training/upload:
     post:
       operationId: uploadAdminTrainingDataset
@@ -1400,6 +1436,48 @@ components:
           type: string
         ingestionStatus:
           type: string
+
+    DocumentBatchUploadInput:
+      type: object
+      required: [files]
+      description: Up to 50 files; the combined size of all files must not exceed 50 MB.
+      properties:
+        files:
+          type: array
+          maxItems: 50
+          items:
+            type: string
+            format: binary
+    DocumentBatchUploadFileResult:
+      type: object
+      required: [fileName, ok]
+      properties:
+        fileName:
+          type: string
+        ok:
+          type: boolean
+        error:
+          type: ["string", "null"]
+        documentId:
+          type: ["string", "null"]
+        versionId:
+          type: ["string", "null"]
+        jobId:
+          type: ["string", "null"]
+        ingestionStatus:
+          type: ["string", "null"]
+    DocumentBatchUploadResult:
+      type: object
+      required: [results, uploadedCount, failedCount]
+      properties:
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/DocumentBatchUploadFileResult"
+        uploadedCount:
+          type: integer
+        failedCount:
+          type: integer
 
     AdminMaintenanceJob:
       type: object

@@ -1,5 +1,12 @@
 import { Readable } from "node:stream";
-import { Router, type IRouter } from "express";
+import {
+  Router,
+  type IRouter,
+  type Request,
+  type RequestHandler,
+  type Response,
+  type NextFunction,
+} from "express";
 import multer from "multer";
 import ExcelJS from "exceljs";
 import { pool } from "@workspace/db";
@@ -21,6 +28,7 @@ import {
   UpdateAdminDocumentParams,
   UpdateAdminDocumentResponse,
   UploadAdminDocumentResponse,
+  UploadAdminDocumentsBatchResponse,
   UploadAdminTrainingDatasetResponse,
 } from "@workspace/api-zod";
 import { attachUser, requireAdmin, requireLegalAccepted } from "../lib/auth";
@@ -29,7 +37,48 @@ import { storeKnowledgeUpload } from "../lib/knowledge-upload";
 import { addTrainingRecord, bulkAddTrainingRecords, loadTrainingRecords } from "../lib/training-data";
 
 const router: IRouter = Router();
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
+
+// One authoritative upload budget: applies per file, per batch total, and as the
+// request-level guard. Keep in sync with the frontend's advertised 50 MB limit.
+const MAX_UPLOAD_BYTES = Number(process.env.MAX_KNOWLEDGE_UPLOAD_BYTES ?? 50 * 1024 * 1024);
+const MAX_BATCH_FILES = 50;
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: MAX_UPLOAD_BYTES } });
+
+/** Reject requests whose declared body size exceeds the budget BEFORE multer buffers anything. */
+function uploadBudgetGuard(req: Request, res: Response, next: NextFunction) {
+  const contentLength = Number(req.headers["content-length"] ?? 0);
+  // Small allowance for multipart boundaries/headers on top of the file budget.
+  if (contentLength > MAX_UPLOAD_BYTES + 1024 * 1024) {
+    res.status(400).json({
+      error: `Total upload size exceeds the ${Math.round(MAX_UPLOAD_BYTES / 1024 / 1024)} MB limit.`,
+    });
+    return;
+  }
+  next();
+}
+
+/** Wrap a multer middleware so its errors surface as documented JSON 400s, not HTML 500s. */
+function withMulterErrors(middleware: RequestHandler): RequestHandler {
+  return (req, res, next) => {
+    middleware(req, res, (err?: unknown) => {
+      if (!err) {
+        next();
+        return;
+      }
+      if (err instanceof multer.MulterError) {
+        const message =
+          err.code === "LIMIT_FILE_SIZE"
+            ? `A file exceeds the ${Math.round(MAX_UPLOAD_BYTES / 1024 / 1024)} MB per-file limit.`
+            : err.code === "LIMIT_FILE_COUNT" || err.code === "LIMIT_UNEXPECTED_FILE"
+              ? `Too many files in one batch (max ${MAX_BATCH_FILES}).`
+              : "Invalid upload request.";
+        res.status(400).json({ error: message });
+        return;
+      }
+      next(err);
+    });
+  };
+}
 
 function sanitizeSheetName(filename: string): string {
   const base = filename.replace(/\.[^.]+$/, "").replace(/[^a-zA-Z0-9_-]+/g, "_").slice(0, 60);
@@ -327,7 +376,77 @@ router.get("/documents", async (_req, res) => {
   res.json(data);
 });
 
-router.post("/documents/upload", upload.single("file"), async (req, res) => {
+router.post("/documents/upload-batch", uploadBudgetGuard, withMulterErrors(upload.array("files", MAX_BATCH_FILES)), async (req, res) => {
+  const files = (req.files ?? []) as Express.Multer.File[];
+  if (!files.length) {
+    res.status(400).json({ error: "At least one file is required." });
+    return;
+  }
+
+  const totalBytes = files.reduce((sum, file) => sum + file.size, 0);
+  if (totalBytes > MAX_UPLOAD_BYTES) {
+    res.status(400).json({
+      error: `Total upload size (${(totalBytes / 1024 / 1024).toFixed(1)} MB) exceeds the ${Math.round(MAX_UPLOAD_BYTES / 1024 / 1024)} MB batch limit.`,
+    });
+    return;
+  }
+
+  const results = [] as Array<{
+    fileName: string;
+    ok: boolean;
+    error: string | null;
+    documentId: string | null;
+    versionId: string | null;
+    jobId: string | null;
+    ingestionStatus: string | null;
+  }>;
+  for (const file of files) {
+    try {
+      const result = await storeKnowledgeUpload(file, req.user!.id);
+      if ("error" in result) {
+        results.push({
+          fileName: file.originalname,
+          ok: false,
+          error: result.error ?? "Upload failed.",
+          documentId: null,
+          versionId: null,
+          jobId: null,
+          ingestionStatus: null,
+        });
+      } else {
+        results.push({
+          fileName: file.originalname,
+          ok: true,
+          error: null,
+          documentId: result.documentId,
+          versionId: result.versionId,
+          jobId: result.jobId,
+          ingestionStatus: result.ingestionStatus,
+        });
+      }
+    } catch (error) {
+      req.log.error({ err: error, fileName: file.originalname }, "Batch upload file failed");
+      results.push({
+        fileName: file.originalname,
+        ok: false,
+        error: "Unexpected error while storing this file.",
+        documentId: null,
+        versionId: null,
+        jobId: null,
+        ingestionStatus: null,
+      });
+    }
+  }
+
+  const data = UploadAdminDocumentsBatchResponse.parse({
+    results,
+    uploadedCount: results.filter((r) => r.ok).length,
+    failedCount: results.filter((r) => !r.ok).length,
+  });
+  res.json(data);
+});
+
+router.post("/documents/upload", uploadBudgetGuard, withMulterErrors(upload.single("file")), async (req, res) => {
   if (!req.file) {
     res.status(400).json({ error: "A file is required." });
     return;

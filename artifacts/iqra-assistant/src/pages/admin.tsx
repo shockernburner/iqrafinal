@@ -8,7 +8,7 @@ import {
   useGetAdminMaintenance,
   useListAdminDonations,
   useGetAdminGrowth,
-  useUploadAdminDocument,
+  useUploadAdminDocumentsBatch,
   useUpdateAdminDocument,
   useStartAdminMaintenance,
   useAddAdminTraining,
@@ -64,13 +64,33 @@ export default function AdminDashboard() {
   const { data: donationsData, isLoading: isLoadingDonations } = useListAdminDonations();
   const { data: growthData, isLoading: isLoadingGrowth } = useGetAdminGrowth();
 
-  const uploadDoc = useUploadAdminDocument({
+  const uploadDocs = useUploadAdminDocumentsBatch({
     mutation: {
-      onSuccess: () => {
-        toast({ title: "Document uploaded successfully" });
+      onSuccess: (result) => {
+        const failed = result.results.filter((r) => !r.ok);
+        if (failed.length === 0) {
+          toast({
+            title: `${result.uploadedCount} document${result.uploadedCount === 1 ? "" : "s"} uploaded`,
+            description: "Indexing runs automatically; originals are removed from storage once indexed.",
+          });
+        } else {
+          toast({
+            title: `${result.uploadedCount} uploaded, ${result.failedCount} failed`,
+            description: failed.map((r) => `${r.fileName}: ${r.error ?? "failed"}`).join(" • "),
+            variant: result.uploadedCount === 0 ? "destructive" : undefined,
+          });
+        }
         queryClient.invalidateQueries({ queryKey: ["/api/admin/documents"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/admin/overview"] });
+        setIsUploadOpen(false);
+        setFiles([]);
       },
-      onError: (err: any) => toast({ title: "Upload failed", description: err?.error, variant: "destructive" })
+      onError: (err: any) =>
+        toast({
+          title: "Upload failed",
+          description: err?.data?.error ?? err?.error ?? err?.message ?? "Unexpected error",
+          variant: "destructive",
+        }),
     }
   });
 
@@ -116,8 +136,11 @@ export default function AdminDashboard() {
   });
 
   // Upload state
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
+  const MAX_BATCH_BYTES = 50 * 1024 * 1024;
+  const totalUploadBytes = files.reduce((sum, f) => sum + f.size, 0);
+  const overBatchLimit = totalUploadBytes > MAX_BATCH_BYTES;
 
   // Training state
   const [newQuestion, setNewQuestion] = useState("");
@@ -127,10 +150,9 @@ export default function AdminDashboard() {
   const [isDatasetOpen, setIsDatasetOpen] = useState(false);
 
   const handleUpload = () => {
-    if (!file) return;
-    uploadDoc.mutate({ data: { file } });
-    setIsUploadOpen(false);
-    setFile(null);
+    if (!files.length || overBatchLimit) return;
+    // Dialog stays open until the upload succeeds so a failure doesn't lose the selection.
+    uploadDocs.mutate({ data: { files } });
   };
 
   const handleAddTraining = () => {
@@ -332,17 +354,30 @@ export default function AdminDashboard() {
                     </DialogTrigger>
                     <DialogContent>
                       <DialogHeader>
-                        <DialogTitle>Upload Knowledge Document</DialogTitle>
-                        <DialogDescription>Upload a PDF, txt, or word file to be indexed by the assistant.</DialogDescription>
+                        <DialogTitle>Upload Knowledge Documents</DialogTitle>
+                        <DialogDescription>
+                          Select one or more PDF, txt, or word files to be indexed by the assistant. Total batch size up to 50 MB.
+                        </DialogDescription>
                       </DialogHeader>
-                      <div className="py-4">
-                        <Input type="file" onChange={(e) => setFile(e.target.files?.[0] || null)} />
+                      <div className="py-4 space-y-2">
+                        <Input
+                          type="file"
+                          multiple
+                          accept=".pdf,.docx,.txt,.html"
+                          onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
+                        />
+                        {files.length > 0 && (
+                          <p className={`text-sm ${overBatchLimit ? "text-destructive" : "text-muted-foreground"}`}>
+                            {files.length} file{files.length === 1 ? "" : "s"} selected — {(totalUploadBytes / 1024 / 1024).toFixed(1)} MB of 50 MB
+                            {overBatchLimit ? " (over the limit — remove some files)" : ""}
+                          </p>
+                        )}
                       </div>
                       <DialogFooter>
                         <Button variant="outline" onClick={() => setIsUploadOpen(false)}>Cancel</Button>
-                        <Button onClick={handleUpload} disabled={!file || uploadDoc.isPending}>
-                          {uploadDoc.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                          Upload
+                        <Button onClick={handleUpload} disabled={!files.length || overBatchLimit || uploadDocs.isPending}>
+                          {uploadDocs.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                          Upload{files.length > 1 ? ` ${files.length} files` : ""}
                         </Button>
                       </DialogFooter>
                     </DialogContent>

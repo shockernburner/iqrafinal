@@ -57,7 +57,7 @@ An Islamic ethics and leadership chat assistant: users register/login, chat with
 ## Product
 
 - Public: register/login (JWT cookie auth), forgot/reset password (emailed single-use reset link), chat with the IQRA assistant across multiple threads, donate page with Stripe checkout (falls back gracefully without a Stripe key). The app is an installable PWA; an in-app install prompt (`components/install-prompt.tsx`) surfaces the Chrome install flow and iOS Safari "Add to Home Screen" instructions.
-- Admin (`/admin`): overview/documents (knowledge base upload + versioning), maintenance (simulated job runner), training (Q&A dataset viewer/editor) tabs.
+- Admin (`/admin`): overview/documents (knowledge base upload + versioning), maintenance (simulated job runner), training (Q&A dataset viewer/editor) tabs. Knowledge upload is multi-file (`POST /admin/documents/upload-batch`, up to 50 files, 50 MB total per batch enforced by a Content-Length guard before multer buffers + multer errors mapped to JSON 400); each file is validated/deduped individually and auto-indexed, with originals auto-deleted after indexing.
 
 ## User preferences
 

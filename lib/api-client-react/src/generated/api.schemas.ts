@@ -384,6 +384,35 @@ export interface DocumentUploadResult {
   ingestionStatus: string;
 }
 
+/**
+ * Up to 50 files; the combined size of all files must not exceed 50 MB.
+ */
+export interface DocumentBatchUploadInput {
+  /** @maxItems 50 */
+  files: Blob[];
+}
+
+export interface DocumentBatchUploadFileResult {
+  fileName: string;
+  ok: boolean;
+  /** @nullable */
+  error?: string | null;
+  /** @nullable */
+  documentId?: string | null;
+  /** @nullable */
+  versionId?: string | null;
+  /** @nullable */
+  jobId?: string | null;
+  /** @nullable */
+  ingestionStatus?: string | null;
+}
+
+export interface DocumentBatchUploadResult {
+  results: DocumentBatchUploadFileResult[];
+  uploadedCount: number;
+  failedCount: number;
+}
+
 export type AdminMaintenanceJobStatus = typeof AdminMaintenanceJobStatus[keyof typeof AdminMaintenanceJobStatus];
 
 
