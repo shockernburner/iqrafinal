@@ -349,3 +349,206 @@ describe("Drive import pipeline", () => {
     await waitForTerminal();
   });
 });
+
+// ─── Status shape tests ───────────────────────────────────────────────────────
+//
+// These tests verify that getDriveImportStatus() — which is returned verbatim by
+// GET /api/admin/documents/import-drive — produces the exact JSON shape the
+// frontend polling loop expects at every stage of an import.  A mismatch between
+// field names / nullability here would silently break the progress display.
+//
+// The shape contract mirrors the GetAdminDriveImportResponse Zod schema in
+// @workspace/api-zod, which defines the wire format.
+
+describe("Drive import status shape (GET /api/admin/documents/import-drive)", () => {
+  /**
+   * Assert every field the frontend reads off a DriveImportJob.
+   * Validates types and nullability rules, not specific values.
+   */
+  function assertJobShape(job: DriveImportJob) {
+    // Identity
+    expect(typeof job.id).toBe("string");
+    expect(job.id.length).toBeGreaterThan(0);
+
+    // Source URL
+    expect(typeof job.folderUrl).toBe("string");
+
+    // Status is one of the documented enum values
+    expect(["scanning", "running", "succeeded", "failed", "cancelled"]).toContain(job.status);
+
+    // Timestamps
+    expect(typeof job.startedAt).toBe("string");
+    // finishedAt is null while running, ISO string when done
+    expect(job.finishedAt === null || typeof job.finishedAt === "string").toBe(true);
+
+    // Counters are all non-negative integers
+    for (const field of ["totalFiles", "processed", "imported", "duplicates", "skipped", "failed"] as const) {
+      expect(typeof job[field]).toBe("number");
+      expect(Number.isInteger(job[field])).toBe(true);
+      expect(job[field]).toBeGreaterThanOrEqual(0);
+    }
+
+    // Counters must be internally consistent: sum of outcomes === processed
+    expect(job.imported + job.duplicates + job.skipped + job.failed).toBe(job.processed);
+
+    // currentFile is null or a non-empty string
+    expect(job.currentFile === null || typeof job.currentFile === "string").toBe(true);
+
+    // recentResults is an array with the correct item shape
+    expect(Array.isArray(job.recentResults)).toBe(true);
+    for (const result of job.recentResults) {
+      expect(typeof result.fileName).toBe("string");
+      expect(["imported", "duplicate", "skipped", "failed"]).toContain(result.outcome);
+      expect(result.detail === null || typeof result.detail === "string").toBe(true);
+    }
+
+    // error is null or a string
+    expect(job.error === null || typeof job.error === "string").toBe(true);
+  }
+
+  it("returns the running shape while a large import is in progress, then the succeeded shape when done", async () => {
+    // 8 files; each download resolves after 50 ms of fake time so the import
+    // stays in the "running" state long enough for us to sample it mid-flight.
+    const files = makeFiles(8);
+    const folderHtml = buildFolderHtml(files);
+
+    vi.stubGlobal("fetch", (url: string) => {
+      const urlStr = String(url);
+      if (urlStr.includes("embeddedfolderview")) {
+        return Promise.resolve(makeFolderResponse(folderHtml));
+      }
+      if (urlStr.includes("uc?export=download")) {
+        return new Promise<Response>((resolve) =>
+          setTimeout(() => resolve(makeFileResponse()), 50),
+        );
+      }
+      return Promise.reject(new Error(`Unexpected fetch: ${urlStr}`));
+    });
+
+    mockStoreSuccess();
+
+    const { started } = startDriveImport(FOLDER_URL, "user-shape-1");
+    expect(started).toBe(true);
+
+    // Advance past one full download cycle (> 50 ms) so at least one file has
+    // been processed and the counters are non-zero, while several downloads are
+    // still in flight (8 files total, concurrency 4, each 50 ms).
+    await vi.advanceTimersByTimeAsync(60);
+
+    // ── Mid-import snapshot ──────────────────────────────────────────────────
+    const midJob = getDriveImportStatus();
+    expect(midJob).not.toBeNull();
+
+    // At least one file must have completed by the 60 ms mark.
+    expect(midJob!.processed).toBeGreaterThan(0);
+    // The job is still running — not all 8 files are done yet.
+    expect(midJob!.status).toBe("running");
+    // finishedAt is null — the job is not done yet.
+    expect(midJob!.finishedAt).toBeNull();
+    // The full shape contract is satisfied.
+    assertJobShape(midJob!);
+
+    // ── Wait for completion ──────────────────────────────────────────────────
+    const finished = await waitForTerminal();
+
+    // Terminal state
+    expect(finished.status).toBe("succeeded");
+
+    // All files must be accounted for
+    expect(finished.totalFiles).toBe(8);
+    expect(finished.processed).toBe(8);
+    expect(finished.imported).toBe(8);
+
+    // finishedAt is now a non-null ISO timestamp
+    expect(finished.finishedAt).not.toBeNull();
+    expect(typeof finished.finishedAt).toBe("string");
+
+    // currentFile is cleared once the job finishes
+    expect(finished.currentFile).toBeNull();
+
+    // recentResults holds up to RECENT_RESULTS_CAP entries, newest first,
+    // each with the correct shape.
+    expect(finished.recentResults.length).toBeGreaterThan(0);
+    expect(finished.recentResults.length).toBeLessThanOrEqual(8);
+    for (const result of finished.recentResults) {
+      expect(result.outcome).toBe("imported");
+      expect(typeof result.fileName).toBe("string");
+      expect(result.fileName.endsWith(".pdf")).toBe(true);
+      expect(result.detail).toBeNull();
+    }
+
+    // No error on a clean run
+    expect(finished.error).toBeNull();
+
+    // Full shape contract is satisfied for the completed job too
+    assertJobShape(finished);
+  });
+
+  it("mid-import status includes partial counters that add up correctly", async () => {
+    // Mix of outcomes: 3 PDFs (will succeed), 2 .zip (will be skipped), 1 PDF
+    // that returns a duplicate error.
+    const successFiles = makeFiles(3);
+    const zipFiles = [
+      { id: "zip-s1", name: "data-01.zip" },
+      { id: "zip-s2", name: "data-02.zip" },
+    ];
+    const dupFile = { id: "dup-s1", name: "dup-s1.pdf" };
+    const allFiles = [...successFiles, ...zipFiles, dupFile];
+    const folderHtml = buildFolderHtml(allFiles);
+
+    vi.stubGlobal("fetch", (url: string) => {
+      const urlStr = String(url);
+      if (urlStr.includes("embeddedfolderview")) {
+        return Promise.resolve(makeFolderResponse(folderHtml));
+      }
+      if (urlStr.includes("uc?export=download")) {
+        // Slow downloads so we can sample mid-run.
+        return new Promise<Response>((resolve) =>
+          setTimeout(() => resolve(makeFileResponse()), 50),
+        );
+      }
+      return Promise.reject(new Error(`Unexpected fetch: ${urlStr}`));
+    });
+
+    vi.mocked(storeKnowledgeUpload).mockImplementation(async (file) => {
+      if (file.originalname === "dup-s1.pdf") {
+        return { error: "Duplicate upload. Existing version: dup-s1.pdf", status: 409 } as const;
+      }
+      return {
+        documentId: "doc-id",
+        versionId: "ver-id",
+        jobId: "job-id",
+        sha256: "abc",
+        ingestionStatus: "queued",
+      } as const;
+    });
+
+    const { started } = startDriveImport(FOLDER_URL, "user-shape-2");
+    expect(started).toBe(true);
+
+    // Advance past one download cycle (> 50 ms) so at least one file has
+    // finished being stored and the processed counter is non-zero.
+    await vi.advanceTimersByTimeAsync(60);
+
+    const midJob = getDriveImportStatus();
+    expect(midJob).not.toBeNull();
+    // At least one file must have been processed by the 60 ms mark.
+    expect(midJob!.processed).toBeGreaterThan(0);
+    // Shape must be valid with non-zero partial progress.
+    assertJobShape(midJob!);
+
+    // Drain the import.
+    const finished = await waitForTerminal();
+
+    expect(finished.status).toBe("succeeded");
+    expect(finished.totalFiles).toBe(6);
+    expect(finished.processed).toBe(6);
+    expect(finished.imported).toBe(3);   // successFiles
+    expect(finished.duplicates).toBe(1); // dupFile
+    expect(finished.skipped).toBe(2);    // zipFiles (unsupported extension)
+    expect(finished.failed).toBe(0);
+
+    // Shape contract holds for the final state too.
+    assertJobShape(finished);
+  });
+});
