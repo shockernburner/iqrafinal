@@ -9,6 +9,9 @@ import {
   useListAdminDonations,
   useGetAdminGrowth,
   useUploadAdminDocumentsBatch,
+  useStartAdminDriveImport,
+  useGetAdminDriveImport,
+  useCancelAdminDriveImport,
   useUpdateAdminDocument,
   useStartAdminMaintenance,
   useAddAdminTraining,
@@ -133,6 +136,44 @@ export default function AdminDashboard() {
       },
       onError: (err: any) => toast({ title: "Upload failed", description: err?.error, variant: "destructive" })
     }
+  });
+
+  // Drive import state
+  const [driveUrl, setDriveUrl] = useState("");
+  const [isDriveOpen, setIsDriveOpen] = useState(false);
+  const { data: driveStatus } = useGetAdminDriveImport({
+    query: {
+      refetchInterval: (query: any) => {
+        const s = query?.state?.data?.job?.status;
+        return s === "scanning" || s === "running" ? 2500 : false;
+      },
+    },
+  } as any);
+  const driveJob = driveStatus?.job ?? null;
+  const driveActive = driveJob?.status === "scanning" || driveJob?.status === "running";
+  const startDrive = useStartAdminDriveImport({
+    mutation: {
+      onSuccess: () => {
+        toast({ title: "Drive import started", description: "Files are downloaded and indexed one by one." });
+        setIsDriveOpen(false);
+        setDriveUrl("");
+        queryClient.invalidateQueries({ queryKey: ["/api/admin/documents/import-drive"] });
+      },
+      onError: (err: any) =>
+        toast({
+          title: "Could not start import",
+          description: err?.data?.error ?? err?.message ?? "Unexpected error",
+          variant: "destructive",
+        }),
+    },
+  });
+  const cancelDrive = useCancelAdminDriveImport({
+    mutation: {
+      onSuccess: () => {
+        toast({ title: "Cancelling import", description: "The current file will finish, then the import stops." });
+        queryClient.invalidateQueries({ queryKey: ["/api/admin/documents/import-drive"] });
+      },
+    },
   });
 
   // Upload state
@@ -348,6 +389,41 @@ export default function AdminDashboard() {
                     <CardTitle>Documents</CardTitle>
                     <CardDescription>Source texts that ground the AI's responses.</CardDescription>
                   </div>
+                  <div className="flex gap-2">
+                  <Dialog open={isDriveOpen} onOpenChange={setIsDriveOpen}>
+                    <DialogTrigger asChild>
+                      <Button size="sm" variant="outline" disabled={driveActive}>
+                        <RefreshCw className="w-4 h-4 mr-2" /> Import from Drive
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Import from Google Drive</DialogTitle>
+                        <DialogDescription>
+                          Paste a Google Drive folder link shared as "Anyone with the link can view". Files (including
+                          those in subfolders) are downloaded, indexed, and cleaned up one by one. Duplicates are skipped
+                          automatically.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="py-4">
+                        <Input
+                          placeholder="https://drive.google.com/drive/folders/..."
+                          value={driveUrl}
+                          onChange={(e) => setDriveUrl(e.target.value)}
+                        />
+                      </div>
+                      <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsDriveOpen(false)}>Cancel</Button>
+                        <Button
+                          onClick={() => startDrive.mutate({ data: { url: driveUrl } })}
+                          disabled={!driveUrl.trim() || startDrive.isPending}
+                        >
+                          {startDrive.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                          Start Import
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
                   <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
                     <DialogTrigger asChild>
                       <Button size="sm"><Upload className="w-4 h-4 mr-2" /> Upload Document</Button>
@@ -382,8 +458,36 @@ export default function AdminDashboard() {
                       </DialogFooter>
                     </DialogContent>
                   </Dialog>
+                  </div>
                 </CardHeader>
                 <CardContent>
+                  {driveJob && (
+                    <div className="mb-6 rounded-lg border p-4 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          {driveActive ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                          <span className="font-medium">
+                            Drive import{" "}
+                            <Badge variant={driveJob.status === "failed" ? "destructive" : "secondary"}>
+                              {driveJob.status}
+                            </Badge>
+                          </span>
+                        </div>
+                        {driveActive && (
+                          <Button size="sm" variant="outline" onClick={() => cancelDrive.mutate()} disabled={cancelDrive.isPending}>
+                            Cancel Import
+                          </Button>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {driveJob.status === "scanning"
+                          ? "Scanning folder tree…"
+                          : `${driveJob.processed} of ${driveJob.totalFiles} files — ${driveJob.imported} imported, ${driveJob.duplicates} duplicates, ${driveJob.skipped} skipped, ${driveJob.failed} failed`}
+                        {driveJob.currentFile ? ` • current: ${driveJob.currentFile}` : ""}
+                      </p>
+                      {driveJob.error && <p className="text-sm text-destructive">{driveJob.error}</p>}
+                    </div>
+                  )}
                   {isLoadingDocs ? (
                     <div className="py-8 flex justify-center"><Loader2 className="animate-spin text-muted-foreground" /></div>
                   ) : (

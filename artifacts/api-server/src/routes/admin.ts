@@ -29,11 +29,13 @@ import {
   UpdateAdminDocumentResponse,
   UploadAdminDocumentResponse,
   UploadAdminDocumentsBatchResponse,
+  GetAdminDriveImportResponse,
   UploadAdminTrainingDatasetResponse,
 } from "@workspace/api-zod";
 import { attachUser, requireAdmin, requireLegalAccepted } from "../lib/auth";
 import { getAdminMaintenanceStatus, startAdminMaintenance } from "../lib/admin-maintenance";
 import { storeKnowledgeUpload } from "../lib/knowledge-upload";
+import { startDriveImport, getDriveImportStatus, cancelDriveImport } from "../lib/drive-import";
 import { addTrainingRecord, bulkAddTrainingRecords, loadTrainingRecords } from "../lib/training-data";
 
 const router: IRouter = Router();
@@ -444,6 +446,36 @@ router.post("/documents/upload-batch", uploadBudgetGuard, withMulterErrors(uploa
     failedCount: results.filter((r) => !r.ok).length,
   });
   res.json(data);
+});
+
+router.post("/documents/import-drive", async (req, res) => {
+  const url = typeof req.body?.url === "string" ? req.body.url.trim() : "";
+  if (!url) {
+    res.status(400).json({ error: "A Google Drive folder link is required." });
+    return;
+  }
+  const result = startDriveImport(url, req.user!.id);
+  if (!result.started) {
+    if ("invalidUrl" in result && result.invalidUrl) {
+      res.status(400).json({ error: "That doesn't look like a Google Drive folder link." });
+      return;
+    }
+    res.status(409).json({ error: "A Drive import is already running. Wait for it to finish or cancel it." });
+    return;
+  }
+  res.json(GetAdminDriveImportResponse.parse({ job: result.job }));
+});
+
+router.get("/documents/import-drive", async (_req, res) => {
+  res.json(GetAdminDriveImportResponse.parse({ job: getDriveImportStatus() }));
+});
+
+router.post("/documents/import-drive/cancel", async (_req, res) => {
+  if (!cancelDriveImport()) {
+    res.status(409).json({ error: "No Drive import is currently running." });
+    return;
+  }
+  res.json(GetAdminDriveImportResponse.parse({ job: getDriveImportStatus() }));
 });
 
 router.post("/documents/upload", uploadBudgetGuard, withMulterErrors(upload.single("file")), async (req, res) => {

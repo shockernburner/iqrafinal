@@ -428,6 +428,91 @@ export const UploadAdminDocumentsBatchResponse = zod.object({
 
 
 /**
+ * @summary Start importing files from a public Google Drive folder link
+ */
+export const StartAdminDriveImportBody = zod.object({
+  "url": zod.string().describe('Public Google Drive folder link (\"anyone with the link\" sharing).')
+})
+
+export const StartAdminDriveImportResponse = zod.object({
+  "job": zod.union([zod.object({
+  "id": zod.string(),
+  "folderUrl": zod.string(),
+  "status": zod.enum(['scanning', 'running', 'succeeded', 'failed', 'cancelled']),
+  "startedAt": zod.string(),
+  "finishedAt": zod.string().nullable(),
+  "totalFiles": zod.number(),
+  "processed": zod.number(),
+  "imported": zod.number(),
+  "duplicates": zod.number(),
+  "skipped": zod.number(),
+  "failed": zod.number(),
+  "currentFile": zod.string().nullable(),
+  "recentResults": zod.array(zod.object({
+  "fileName": zod.string(),
+  "outcome": zod.enum(['imported', 'duplicate', 'skipped', 'failed']),
+  "detail": zod.string().nullable()
+})),
+  "error": zod.string().nullable()
+}),zod.null()])
+})
+
+
+/**
+ * @summary Get status of the current/last Google Drive import
+ */
+export const GetAdminDriveImportResponse = zod.object({
+  "job": zod.union([zod.object({
+  "id": zod.string(),
+  "folderUrl": zod.string(),
+  "status": zod.enum(['scanning', 'running', 'succeeded', 'failed', 'cancelled']),
+  "startedAt": zod.string(),
+  "finishedAt": zod.string().nullable(),
+  "totalFiles": zod.number(),
+  "processed": zod.number(),
+  "imported": zod.number(),
+  "duplicates": zod.number(),
+  "skipped": zod.number(),
+  "failed": zod.number(),
+  "currentFile": zod.string().nullable(),
+  "recentResults": zod.array(zod.object({
+  "fileName": zod.string(),
+  "outcome": zod.enum(['imported', 'duplicate', 'skipped', 'failed']),
+  "detail": zod.string().nullable()
+})),
+  "error": zod.string().nullable()
+}),zod.null()])
+})
+
+
+/**
+ * @summary Cancel the running Google Drive import
+ */
+export const CancelAdminDriveImportResponse = zod.object({
+  "job": zod.union([zod.object({
+  "id": zod.string(),
+  "folderUrl": zod.string(),
+  "status": zod.enum(['scanning', 'running', 'succeeded', 'failed', 'cancelled']),
+  "startedAt": zod.string(),
+  "finishedAt": zod.string().nullable(),
+  "totalFiles": zod.number(),
+  "processed": zod.number(),
+  "imported": zod.number(),
+  "duplicates": zod.number(),
+  "skipped": zod.number(),
+  "failed": zod.number(),
+  "currentFile": zod.string().nullable(),
+  "recentResults": zod.array(zod.object({
+  "fileName": zod.string(),
+  "outcome": zod.enum(['imported', 'duplicate', 'skipped', 'failed']),
+  "detail": zod.string().nullable()
+})),
+  "error": zod.string().nullable()
+}),zod.null()])
+})
+
+
+/**
  * @summary Bulk upload a training dataset (Excel .xlsx or .csv)
  */
 export const UploadAdminTrainingDatasetBody = zod.object({

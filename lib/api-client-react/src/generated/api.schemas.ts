@@ -413,6 +413,63 @@ export interface DocumentBatchUploadResult {
   failedCount: number;
 }
 
+export interface DriveImportStartInput {
+  /** Public Google Drive folder link ("anyone with the link" sharing). */
+  url: string;
+}
+
+export type DriveImportResultOutcome = typeof DriveImportResultOutcome[keyof typeof DriveImportResultOutcome];
+
+
+export const DriveImportResultOutcome = {
+  imported: 'imported',
+  duplicate: 'duplicate',
+  skipped: 'skipped',
+  failed: 'failed',
+} as const;
+
+export interface DriveImportResult {
+  fileName: string;
+  outcome: DriveImportResultOutcome;
+  /** @nullable */
+  detail: string | null;
+}
+
+export type DriveImportJobStatus = typeof DriveImportJobStatus[keyof typeof DriveImportJobStatus];
+
+
+export const DriveImportJobStatus = {
+  scanning: 'scanning',
+  running: 'running',
+  succeeded: 'succeeded',
+  failed: 'failed',
+  cancelled: 'cancelled',
+} as const;
+
+export interface DriveImportJob {
+  id: string;
+  folderUrl: string;
+  status: DriveImportJobStatus;
+  startedAt: string;
+  /** @nullable */
+  finishedAt: string | null;
+  totalFiles: number;
+  processed: number;
+  imported: number;
+  duplicates: number;
+  skipped: number;
+  failed: number;
+  /** @nullable */
+  currentFile: string | null;
+  recentResults: DriveImportResult[];
+  /** @nullable */
+  error: string | null;
+}
+
+export interface DriveImportStatus {
+  job: DriveImportJob | null;
+}
+
 export type AdminMaintenanceJobStatus = typeof AdminMaintenanceJobStatus[keyof typeof AdminMaintenanceJobStatus];
 
 

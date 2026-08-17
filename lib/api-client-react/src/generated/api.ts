@@ -46,6 +46,8 @@ import type {
   DocumentUploadResult,
   DonationCheckout,
   DonationInput,
+  DriveImportStartInput,
+  DriveImportStatus,
   ErrorResponse,
   ForgotPasswordInput,
   HealthStatus,
@@ -1854,6 +1856,223 @@ export const useUploadAdminDocumentsBatch = <TError = ErrorType<ErrorResponse>,
         TContext
       > => {
       return useMutation(getUploadAdminDocumentsBatchMutationOptions(options));
+    }
+
+export const getStartAdminDriveImportUrl = () => {
+
+
+
+
+  return `/api/admin/documents/import-drive`
+}
+
+/**
+ * @summary Start importing files from a public Google Drive folder link
+ */
+export const startAdminDriveImport = async (driveImportStartInput: DriveImportStartInput, options?: RequestInit): Promise<DriveImportStatus> => {
+
+  return customFetch<DriveImportStatus>(getStartAdminDriveImportUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(driveImportStartInput)
+  }
+);}
+
+
+
+
+export const getStartAdminDriveImportMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startAdminDriveImport>>, TError,{data: BodyType<DriveImportStartInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof startAdminDriveImport>>, TError,{data: BodyType<DriveImportStartInput>}, TContext> => {
+
+const mutationKey = ['startAdminDriveImport'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof startAdminDriveImport>>, {data: BodyType<DriveImportStartInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  startAdminDriveImport(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type StartAdminDriveImportMutationResult = NonNullable<Awaited<ReturnType<typeof startAdminDriveImport>>>
+    export type StartAdminDriveImportMutationBody = BodyType<DriveImportStartInput>
+    export type StartAdminDriveImportMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Start importing files from a public Google Drive folder link
+ */
+export const useStartAdminDriveImport = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startAdminDriveImport>>, TError,{data: BodyType<DriveImportStartInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof startAdminDriveImport>>,
+        TError,
+        {data: BodyType<DriveImportStartInput>},
+        TContext
+      > => {
+      return useMutation(getStartAdminDriveImportMutationOptions(options));
+    }
+
+export const getGetAdminDriveImportUrl = () => {
+
+
+
+
+  return `/api/admin/documents/import-drive`
+}
+
+/**
+ * @summary Get status of the current/last Google Drive import
+ */
+export const getAdminDriveImport = async ( options?: RequestInit): Promise<DriveImportStatus> => {
+
+  return customFetch<DriveImportStatus>(getGetAdminDriveImportUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAdminDriveImportQueryKey = () => {
+    return [
+    `/api/admin/documents/import-drive`
+    ] as const;
+    }
+
+
+export const getGetAdminDriveImportQueryOptions = <TData = Awaited<ReturnType<typeof getAdminDriveImport>>, TError = ErrorType<ErrorResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminDriveImport>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAdminDriveImportQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdminDriveImport>>> = ({ signal }) => getAdminDriveImport({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAdminDriveImport>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAdminDriveImportQueryResult = NonNullable<Awaited<ReturnType<typeof getAdminDriveImport>>>
+export type GetAdminDriveImportQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary Get status of the current/last Google Drive import
+ */
+
+export function useGetAdminDriveImport<TData = Awaited<ReturnType<typeof getAdminDriveImport>>, TError = ErrorType<ErrorResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminDriveImport>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAdminDriveImportQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCancelAdminDriveImportUrl = () => {
+
+
+
+
+  return `/api/admin/documents/import-drive/cancel`
+}
+
+/**
+ * @summary Cancel the running Google Drive import
+ */
+export const cancelAdminDriveImport = async ( options?: RequestInit): Promise<DriveImportStatus> => {
+
+  return customFetch<DriveImportStatus>(getCancelAdminDriveImportUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getCancelAdminDriveImportMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof cancelAdminDriveImport>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof cancelAdminDriveImport>>, TError,void, TContext> => {
+
+const mutationKey = ['cancelAdminDriveImport'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof cancelAdminDriveImport>>, void> = () => {
+
+
+          return  cancelAdminDriveImport(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CancelAdminDriveImportMutationResult = NonNullable<Awaited<ReturnType<typeof cancelAdminDriveImport>>>
+
+    export type CancelAdminDriveImportMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Cancel the running Google Drive import
+ */
+export const useCancelAdminDriveImport = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof cancelAdminDriveImport>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof cancelAdminDriveImport>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getCancelAdminDriveImportMutationOptions(options));
     }
 
 export const getUploadAdminTrainingDatasetUrl = () => {

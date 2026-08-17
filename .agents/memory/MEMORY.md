@@ -12,4 +12,5 @@
 - [Multilingual chat](multilingual-chat.md) — assistant mirrors the user's language via the SYSTEM_PROMPT Language Protocol; deterministic/canned responses must be routed through `localizeMessage` or they leak English.
 - [IQRA separate prod DB & donation reconcile](iqra-prod-db-and-donation-reconcile.md) — dev/prod DBs are SEPARATE and prod is read-only; write prod data via idempotent boot routines (applies on redeploy); reconcile lost donations from stripe_events.
 - [Knowledge originals purged after indexing](knowledge-original-purge.md) — active documents have no source file in storage; retry/re-ingest requires re-upload; failed versions keep their file.
+- [Drive import via public scrape](drive-import-public-scrape.md) — connector grant is drive.file-only, so KB import scrapes public folder views; interstitial form action must stay on Google hosts (SSRF).
 - [Prerender public route coupling](prerender-public-route-coupling.md) — a new crawlable public page needs App.tsx route + entry-server PRERENDER_ROUTES + artifact.toml rewrite in lockstep.

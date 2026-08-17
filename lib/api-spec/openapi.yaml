@@ -642,6 +642,101 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /admin/documents/import-drive:
+    post:
+      operationId: startAdminDriveImport
+      tags: [admin]
+      summary: Start importing files from a public Google Drive folder link
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DriveImportStartInput"
+      responses:
+        "200":
+          description: Import started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DriveImportStatus"
+        "400":
+          description: Invalid Drive folder URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Admin only
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: An import is already running
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    get:
+      operationId: getAdminDriveImport
+      tags: [admin]
+      summary: Get status of the current/last Google Drive import
+      responses:
+        "200":
+          description: Import status (job is null when none has run)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DriveImportStatus"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Admin only
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /admin/documents/import-drive/cancel:
+    post:
+      operationId: cancelAdminDriveImport
+      tags: [admin]
+      summary: Cancel the running Google Drive import
+      responses:
+        "200":
+          description: Cancellation requested
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DriveImportStatus"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Admin only
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: No import is running
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /admin/training/upload:
     post:
       operationId: uploadAdminTrainingDataset
@@ -1478,6 +1573,69 @@ components:
           type: integer
         failedCount:
           type: integer
+
+    DriveImportStartInput:
+      type: object
+      required: [url]
+      properties:
+        url:
+          type: string
+          description: Public Google Drive folder link ("anyone with the link" sharing).
+    DriveImportResult:
+      type: object
+      required: [fileName, outcome, detail]
+      properties:
+        fileName:
+          type: string
+        outcome:
+          type: string
+          enum: [imported, duplicate, skipped, failed]
+        detail:
+          type: ["string", "null"]
+    DriveImportJob:
+      type: object
+      required:
+        [id, folderUrl, status, startedAt, finishedAt, totalFiles, processed, imported, duplicates, skipped, failed, currentFile, recentResults, error]
+      properties:
+        id:
+          type: string
+        folderUrl:
+          type: string
+        status:
+          type: string
+          enum: [scanning, running, succeeded, failed, cancelled]
+        startedAt:
+          type: string
+        finishedAt:
+          type: ["string", "null"]
+        totalFiles:
+          type: integer
+        processed:
+          type: integer
+        imported:
+          type: integer
+        duplicates:
+          type: integer
+        skipped:
+          type: integer
+        failed:
+          type: integer
+        currentFile:
+          type: ["string", "null"]
+        recentResults:
+          type: array
+          items:
+            $ref: "#/components/schemas/DriveImportResult"
+        error:
+          type: ["string", "null"]
+    DriveImportStatus:
+      type: object
+      required: [job]
+      properties:
+        job:
+          oneOf:
+            - $ref: "#/components/schemas/DriveImportJob"
+            - type: "null"
 
     AdminMaintenanceJob:
       type: object
