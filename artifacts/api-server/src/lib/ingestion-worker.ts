@@ -68,12 +68,55 @@ async function extractText(buffer: Buffer, extension: string) {
   return { pageCount: 1, chunks: chunkPageText(buffer.toString("utf8"), 1) };
 }
 
-type ClaimedJob = { id: string; document_version_id: string };
+type ClaimedJob = { id: string; document_version_id: string; attempt_token: string };
+
+const heartbeatIntervalMs = 60 * 1000;
+
+const staleJobTimeoutMs = Number(process.env.INGESTION_STALE_JOB_TIMEOUT_MS ?? 10 * 60 * 1000);
+const staleReclaimIntervalMs = 60 * 1000;
+const maxStaleRequeues = 3;
+
+// A job stuck in 'processing' with no heartbeat (progress updates touch
+// updated_at) is orphaned — the instance that claimed it was stopped mid-job
+// (Autoscale scale-down, redeploy, crash). Requeue it so another worker picks
+// it up; after too many requeues, mark it failed so a poison file can't loop.
+async function reclaimStaleJobs() {
+  const requeued = await pool.query(
+    `UPDATE ingestion_jobs
+     SET status = 'queued', started_at = NULL, progress = 0, attempt_token = NULL,
+         retry_count = retry_count + 1, updated_at = now()
+     WHERE status = 'processing'
+       AND updated_at < now() - make_interval(secs => $1)
+       AND retry_count < $2
+     RETURNING id`,
+    [staleJobTimeoutMs / 1000, maxStaleRequeues],
+  );
+  const failed = await pool.query<{ id: string; document_version_id: string }>(
+    `UPDATE ingestion_jobs
+     SET status = 'failed', error_message = 'Job was interrupted repeatedly and gave up.',
+         attempt_token = NULL, finished_at = now(), updated_at = now()
+     WHERE status = 'processing'
+       AND updated_at < now() - make_interval(secs => $1)
+       AND retry_count >= $2
+     RETURNING id, document_version_id`,
+    [staleJobTimeoutMs / 1000, maxStaleRequeues],
+  );
+  for (const row of failed.rows) {
+    await pool.query(`UPDATE document_versions SET status = 'failed' WHERE id = $1`, [row.document_version_id]);
+  }
+  if (requeued.rowCount || failed.rowCount) {
+    logger.warn(
+      { requeued: requeued.rowCount, failed: failed.rowCount },
+      "Reclaimed stale ingestion jobs left in 'processing'",
+    );
+  }
+}
 
 async function claimJob(): Promise<ClaimedJob | null> {
   const result = await pool.query<ClaimedJob>(
     `UPDATE ingestion_jobs
-     SET status = 'processing', started_at = now(), updated_at = now(), progress = 5
+     SET status = 'processing', started_at = now(), updated_at = now(), progress = 5,
+         attempt_token = gen_random_uuid()
      WHERE id = (
        SELECT id FROM ingestion_jobs
        WHERE status = 'queued'
@@ -81,13 +124,38 @@ async function claimJob(): Promise<ClaimedJob | null> {
        FOR UPDATE SKIP LOCKED
        LIMIT 1
      )
-     RETURNING id, document_version_id`,
+     RETURNING id, document_version_id, attempt_token`,
   );
   return result.rows[0] ?? null;
 }
 
+// Independently-committed lease heartbeat. Runs outside any transaction so
+// reclaimStaleJobs on other instances can see it during long read/extract
+// phases. Returns false if ownership was lost (job reclaimed elsewhere).
+async function heartbeat(job: ClaimedJob): Promise<boolean> {
+  const result = await pool.query(
+    `UPDATE ingestion_jobs SET updated_at = now()
+     WHERE id = $1 AND attempt_token = $2 AND status = 'processing'`,
+    [job.id, job.attempt_token],
+  );
+  return (result.rowCount ?? 0) > 0;
+}
+
+class OwnershipLostError extends Error {
+  constructor() {
+    super("Ingestion job ownership lost (reclaimed by another worker).");
+  }
+}
+
 async function processJob(job: ClaimedJob) {
   const client = await pool.connect();
+  // Keep the lease visibly fresh during long read/extract phases (these run
+  // before the chunk transaction and can exceed the stale-job timeout).
+  const heartbeatTimer = setInterval(() => {
+    heartbeat(job).catch((error) => {
+      logger.warn({ jobId: job.id, err: error }, "Ingestion heartbeat failed");
+    });
+  }, heartbeatIntervalMs);
   try {
     const versionResult = await client.query<{
       id: string;
@@ -109,6 +177,7 @@ async function processJob(job: ClaimedJob) {
     const bytes = await readKnowledgeObject(version.storage_key);
     const extracted = await extractText(bytes, version.extension);
     if (!extracted.chunks.length) throw new Error("No extractable text was found.");
+    if (!(await heartbeat(job))) throw new OwnershipLostError();
 
     await client.query("BEGIN");
     await client.query("DELETE FROM document_chunks WHERE document_version_id = $1", [version.id]);
@@ -129,10 +198,10 @@ async function processJob(job: ClaimedJob) {
       );
       if (index % 10 === 0) {
         const progress = Math.min(95, 10 + Math.round((index / extracted.chunks.length) * 80));
-        await client.query("UPDATE ingestion_jobs SET progress = $1, updated_at = now() WHERE id = $2", [
-          progress,
-          job.id,
-        ]);
+        await client.query(
+          "UPDATE ingestion_jobs SET progress = $1, updated_at = now() WHERE id = $2 AND attempt_token = $3",
+          [progress, job.id, job.attempt_token],
+        );
       }
     }
     await client.query(
@@ -151,10 +220,13 @@ async function processJob(job: ClaimedJob) {
        WHERE id = $1`,
       [version.document_id, version.id],
     );
-    await client.query(
-      "UPDATE ingestion_jobs SET status = 'succeeded', progress = 100, finished_at = now(), updated_at = now() WHERE id = $1",
-      [job.id],
+    const success = await client.query(
+      `UPDATE ingestion_jobs
+       SET status = 'succeeded', progress = 100, attempt_token = NULL, finished_at = now(), updated_at = now()
+       WHERE id = $1 AND attempt_token = $2 AND status = 'processing'`,
+      [job.id, job.attempt_token],
     );
+    if ((success.rowCount ?? 0) === 0) throw new OwnershipLostError();
     await client.query("COMMIT");
     logger.info(
       { jobId: job.id, versionId: version.id, chunks: extracted.chunks.length },
@@ -171,16 +243,30 @@ async function processJob(job: ClaimedJob) {
     }
   } catch (error) {
     await client.query("ROLLBACK").catch(() => undefined);
+    if (error instanceof OwnershipLostError) {
+      // The job was reclaimed and belongs to another attempt now — do not
+      // touch job or document-version state, and never delete the source.
+      logger.warn({ jobId: job.id }, "Ingestion job ownership lost; abandoning attempt");
+      return;
+    }
     const message = error instanceof Error ? error.message : "Unknown ingestion failure.";
+    // Terminal failure: transition job + document version atomically, and
+    // only if this attempt still owns the job.
     await pool.query(
-      `UPDATE ingestion_jobs
-       SET status = 'failed', error_message = $2, retry_count = retry_count + 1, finished_at = now(), updated_at = now()
-       WHERE id = $1`,
-      [job.id, message],
+      `WITH failed_job AS (
+         UPDATE ingestion_jobs
+         SET status = 'failed', error_message = $2, retry_count = retry_count + 1,
+             attempt_token = NULL, finished_at = now(), updated_at = now()
+         WHERE id = $1 AND attempt_token = $3 AND status = 'processing'
+         RETURNING document_version_id
+       )
+       UPDATE document_versions SET status = 'failed'
+       WHERE id IN (SELECT document_version_id FROM failed_job)`,
+      [job.id, message, job.attempt_token],
     );
-    await pool.query(`UPDATE document_versions SET status = 'failed' WHERE id = $1`, [job.document_version_id]);
     logger.error({ jobId: job.id, err: error }, "Ingestion job failed");
   } finally {
+    clearInterval(heartbeatTimer);
     client.release();
   }
 }
@@ -192,9 +278,14 @@ export function startIngestionWorker() {
   running = true;
   logger.info({ pollIntervalMs }, "Starting background ingestion worker");
 
+  let lastReclaimAt = 0;
   const loop = async () => {
     while (running) {
       try {
+        if (Date.now() - lastReclaimAt >= staleReclaimIntervalMs) {
+          lastReclaimAt = Date.now();
+          await reclaimStaleJobs();
+        }
         const job = await claimJob();
         if (job) {
           await processJob(job);
