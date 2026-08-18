@@ -189,24 +189,32 @@ export default function Chat() {
                         <ReactMarkdown>{msg.content}</ReactMarkdown>
                         {(() => {
                           const confidence = (msg.responsePayload as Record<string, unknown> | null)?.confidence;
-                          if (confidence === "medium" || confidence === "low") {
+                          if (confidence === "high" || confidence === "medium" || confidence === "low") {
                             return (
                               <div className="mt-3 pt-3 border-t border-border/40 flex items-center gap-2 not-prose">
                                 <span
                                   className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${
                                     confidence === "low"
                                       ? "bg-destructive/10 text-destructive"
-                                      : "bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                                      : confidence === "medium"
+                                        ? "bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                                        : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
                                   }`}
                                   data-testid="badge-confidence"
                                 >
                                   <span className="w-1.5 h-1.5 rounded-full bg-current" />
-                                  {confidence === "low" ? "Low confidence" : "Moderate confidence"}
+                                  {confidence === "low"
+                                    ? "Low confidence"
+                                    : confidence === "medium"
+                                      ? "Moderate confidence"
+                                      : "High confidence"}
                                 </span>
                                 <span className="text-xs text-muted-foreground">
                                   {confidence === "low"
                                     ? "Verify with a qualified scholar."
-                                    : "Not yet fully grounded in the IQRA library."}
+                                    : confidence === "medium"
+                                      ? "Not yet fully grounded in the IQRA library."
+                                      : "Grounded in the IQRA library."}
                                 </span>
                               </div>
                             );
