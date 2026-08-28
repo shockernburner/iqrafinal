@@ -20,7 +20,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Database, FileText, Activity, BookOpen, Users, DollarSign, Loader2, Plus, RefreshCw, Upload, MoreHorizontal } from "lucide-react";
+import { Database, FileText, Activity, BookOpen, Users, DollarSign, MessageCircle, Loader2, Plus, RefreshCw, Upload, MoreHorizontal } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -59,7 +59,12 @@ export default function AdminDashboard() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("documents");
   
-  const { data: overview, isLoading: isLoadingOverview } = useGetAdminOverview();
+  const { data: overview, isLoading: isLoadingOverview } = useGetAdminOverview({
+    query: {
+      refetchInterval: 5000,
+      refetchIntervalInBackground: false,
+    } as any,
+  });
   const { data: documentsData, isLoading: isLoadingDocs } = useListAdminDocuments();
   const { data: trainingData, isLoading: isLoadingTraining } = useListAdminTraining();
   const { data: maintenanceData, isLoading: isLoadingMaint } = useGetAdminMaintenance();
@@ -223,11 +228,11 @@ export default function AdminDashboard() {
 
           {/* Stats Row */}
           {isLoadingOverview ? (
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              {[1, 2, 3, 4].map(i => <Card key={i} className="h-32 flex items-center justify-center"><Loader2 className="animate-spin text-muted-foreground" /></Card>)}
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
+              {[1, 2, 3, 4, 5].map(i => <Card key={i} className="h-32 flex items-center justify-center"><Loader2 className="animate-spin text-muted-foreground" /></Card>)}
             </div>
           ) : overview ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground">Total Users</CardTitle>
@@ -255,6 +260,16 @@ export default function AdminDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{overview.trainingRowsTotal}</div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Questions Replied</CardTitle>
+                  <MessageCircle className="w-4 h-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{overview.questionsRepliedTotal.toLocaleString()}</div>
+                  <p className="text-xs text-muted-foreground mt-1">successfully answered</p>
                 </CardContent>
               </Card>
               <Card>

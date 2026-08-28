@@ -121,17 +121,24 @@ function asConfidence(value: unknown): "high" | "medium" | "low" {
  * translates it — and any failure falls back to the original English text so the
  * response is never blocked.
  */
-export async function localizeMessage(prompt: string, englishMessage: string): Promise<string> {
+export async function localizeMessage(
+  prompt: string,
+  englishMessage: string,
+  signal?: AbortSignal,
+): Promise<string> {
   try {
-    const message = await anthropic.messages.create({
-      model: "claude-sonnet-4-6",
-      max_tokens: 1024,
-      system:
-        "You are a translator. Translate the MESSAGE into the exact same natural language as the USER TEXT, matching its script and register. If the USER TEXT is already in English, return the MESSAGE unchanged. Do not answer or comment on the USER TEXT. Output ONLY the translated message — no quotes, no labels, no commentary.",
-      messages: [
-        { role: "user", content: `USER TEXT:\n${prompt}\n\n---\n\nMESSAGE:\n${englishMessage}` },
-      ],
-    });
+    const message = await anthropic.messages.create(
+      {
+        model: "claude-sonnet-4-6",
+        max_tokens: 1024,
+        system:
+          "You are a translator. Translate the MESSAGE into the exact same natural language as the USER TEXT, matching its script and register. If the USER TEXT is already in English, return the MESSAGE unchanged. Do not answer or comment on the USER TEXT. Output ONLY the translated message — no quotes, no labels, no commentary.",
+        messages: [
+          { role: "user", content: `USER TEXT:\n${prompt}\n\n---\n\nMESSAGE:\n${englishMessage}` },
+        ],
+      },
+      { signal },
+    );
     const text = message.content
       .map((block) => (block.type === "text" ? block.text : ""))
       .join("")
@@ -146,13 +153,17 @@ export async function generateLlmChatResponse(
   prompt: string,
   chunks: RetrievedChunk[],
   examples: TrainingRecord[],
+  signal?: AbortSignal,
 ): Promise<LlmChatResult> {
-  const message = await anthropic.messages.create({
-    model: "claude-sonnet-4-6",
-    max_tokens: 8192,
-    system: SYSTEM_PROMPT,
-    messages: [{ role: "user", content: buildUserContent(prompt, chunks, examples) }],
-  });
+  const message = await anthropic.messages.create(
+    {
+      model: "claude-sonnet-4-6",
+      max_tokens: 8192,
+      system: SYSTEM_PROMPT,
+      messages: [{ role: "user", content: buildUserContent(prompt, chunks, examples) }],
+    },
+    { signal },
+  );
 
   const text = message.content
     .map((block) => (block.type === "text" ? block.text : ""))

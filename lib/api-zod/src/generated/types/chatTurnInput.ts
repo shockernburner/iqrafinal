@@ -8,6 +8,8 @@
 import type { ChatTurnInputAssistantPayload } from './chatTurnInputAssistantPayload';
 
 export interface ChatTurnInput {
+  /** Client-generated idempotency key for this completed turn */
+  turnId: string;
   userText: string;
   assistantPayload: ChatTurnInputAssistantPayload;
 }

@@ -1,19 +1,74 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { AppLayout } from "@/components/layout";
 import { useLocation, useSearch } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
-import { 
-  useGetChat, 
-  useAppendChatTurn, 
-  useCreateChat,
-  useSendChat 
+import {
+  appendChatTurn,
+  createChat,
+  getChat,
+  getListChatsQueryKey,
+  getOlderChatMessages,
+  sendChat,
+  type ChatResponse,
+  type ChatThreadDetail,
 } from "@workspace/api-client-react";
 import { Send, Loader2, Copy, Check, Share2 } from "lucide-react";
+import { useInfiniteQuery, useQueryClient, type InfiniteData } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import logoPng from "@/assets/logo.png";
 import ReactMarkdown from "react-markdown";
+
+const CHAT_GENERATION_TIMEOUT_MS = 95_000;
+const CHAT_SAVE_TIMEOUT_MS = 15_000;
+
+class ClientRequestTimeoutError extends Error {}
+
+type PendingTurn = {
+  turnId: string;
+  userText: string;
+  chatId?: string;
+  assistantPayload?: ChatResponse;
+};
+
+function chatThreadQueryKey(id: string) {
+  return ["chat-thread", id] as const;
+}
+
+async function withRequestTimeout<T>(
+  run: (signal: AbortSignal) => Promise<T>,
+  timeoutMs: number,
+): Promise<T> {
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await run(controller.signal);
+  } catch (error) {
+    if (controller.signal.aborted) {
+      throw new ClientRequestTimeoutError("The request took too long.");
+    }
+    throw error;
+  } finally {
+    window.clearTimeout(timer);
+  }
+}
+
+function errorMessage(error: unknown): string {
+  if (error instanceof ClientRequestTimeoutError) {
+    return "IQRA took too long to respond. Please try your question again.";
+  }
+  if (error && typeof error === "object") {
+    const data = (error as { data?: unknown }).data;
+    if (data && typeof data === "object" && typeof (data as { error?: unknown }).error === "string") {
+      return (data as { error: string }).error;
+    }
+    if (typeof (error as { message?: unknown }).message === "string") {
+      return (error as { message: string }).message;
+    }
+  }
+  return "The response could not be completed. Please try again.";
+}
 
 function getInitials(name?: string | null, email?: string | null): string {
   const source = (name && name.trim()) || (email ? email.split("@")[0] : "");
@@ -33,7 +88,12 @@ export default function Chat() {
   
   const [input, setInput] = useState("");
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
+  const [retryTurn, setRetryTurn] = useState<PendingTurn | null>(null);
+  const submissionInFlightRef = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const queryClient = useQueryClient();
 
   const handleCopy = async (text: string, id: string) => {
     try {
@@ -59,61 +119,106 @@ export default function Chat() {
     }
   };
   
-  const { data: chatData, isLoading: isLoadingChat } = useGetChat(
-    chatId as string, 
-    { query: { enabled: !!chatId, refetchInterval: 2000 } as any } // Poll to get updates since backend process might be async
-  );
-  
-  const sendChatMutation = useSendChat();
-  const sendTurnMutation = useAppendChatTurn();
-
-  const submitTurn = async (id: string, userText: string) => {
-    const assistantPayload = await sendChatMutation.mutateAsync({ data: { prompt: userText } });
-    await sendTurnMutation.mutateAsync({
-      id,
-      data: { userText, assistantPayload: assistantPayload as unknown as Record<string, unknown> },
-    });
-  };
-
-  const createChatMutation = useCreateChat({
-    mutation: {
-      onSuccess: (thread) => {
-        setLocation(`/?chatId=${thread.id}`);
-        const pendingInput = input;
-        setInput("");
-        void submitTurn(thread.id, pendingInput);
-      }
-    }
+  const chatQuery = useInfiniteQuery({
+    queryKey: chatThreadQueryKey(chatId ?? ""),
+    queryFn: ({ pageParam, signal }) =>
+      pageParam
+        ? getOlderChatMessages(chatId!, pageParam, { signal })
+        : getChat(chatId!, { signal }),
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage) => (lastPage.hasMore ? lastPage.nextCursor ?? undefined : undefined),
+    enabled: !!chatId,
+    staleTime: 30_000,
+    refetchOnWindowFocus: true,
   });
 
-  const isGenerating =
-    sendChatMutation.isPending ||
-    sendTurnMutation.isPending ||
-    createChatMutation.isPending ||
-    (chatData && chatData.messages.length > 0 && chatData.messages[chatData.messages.length - 1].role === "user" && !chatData.messages.some(m => m.role === 'assistant' && new Date(m.createdAt) > new Date(chatData.messages[chatData.messages.length - 1].createdAt)));
+  const messages = useMemo(() => {
+    const seen = new Set<string>();
+    return [...(chatQuery.data?.pages ?? [])]
+      .reverse()
+      .flatMap((page) => page.messages)
+      .filter((message) => {
+        if (seen.has(message.id)) return false;
+        seen.add(message.id);
+        return true;
+      });
+  }, [chatQuery.data?.pages]);
 
-  const handleSend = () => {
-    if (!input.trim() || isGenerating) return;
-    
-    if (!chatId) {
-      createChatMutation.mutate({ data: { title: input.substring(0, 30) + "..." } });
-    } else {
-      const pendingInput = input;
-      setInput("");
-      void submitTurn(chatId, pendingInput);
+  const handleSend = async () => {
+    const userText = input.trim();
+    if (!userText || submissionInFlightRef.current) return;
+
+    submissionInFlightRef.current = true;
+    setIsGenerating(true);
+    setSendError(null);
+    setInput("");
+    let pending: PendingTurn =
+      retryTurn?.userText === userText
+        ? retryTurn
+        : { turnId: crypto.randomUUID(), userText };
+    try {
+      let targetChatId = pending.chatId ?? chatId;
+      if (!targetChatId) {
+        const thread = await createChat({ title: userText.substring(0, 30) + "..." });
+        targetChatId = thread.id;
+        setLocation(`/?chatId=${thread.id}`);
+      }
+      pending = { ...pending, chatId: targetChatId };
+      setRetryTurn(pending);
+
+      const assistantPayload =
+        pending.assistantPayload ??
+        (await withRequestTimeout(
+          (signal) => sendChat({ prompt: userText }, { signal }),
+          CHAT_GENERATION_TIMEOUT_MS,
+        ));
+      pending = { ...pending, assistantPayload };
+      setRetryTurn(pending);
+
+      await withRequestTimeout(
+        (signal) =>
+          appendChatTurn(
+            targetChatId,
+            {
+              turnId: pending.turnId,
+              userText,
+              assistantPayload: assistantPayload as unknown as Record<string, unknown>,
+            },
+            { signal },
+          ),
+        CHAT_SAVE_TIMEOUT_MS,
+      );
+
+      // Refresh only the newest bounded page. Older pages remain safely stored
+      // server-side and can be loaded again with the cursor button.
+      const latestPage = await getChat(targetChatId);
+      queryClient.setQueryData<InfiniteData<ChatThreadDetail, string | null>>(
+        chatThreadQueryKey(targetChatId),
+        { pages: [latestPage], pageParams: [null] },
+      );
+      await queryClient.invalidateQueries({ queryKey: getListChatsQueryKey() });
+      setRetryTurn(null);
+    } catch (error) {
+      setRetryTurn(pending);
+      setSendError(errorMessage(error));
+      setInput(userText);
+    } finally {
+      submissionInFlightRef.current = false;
+      setIsGenerating(false);
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      handleSend();
+      void handleSend();
     }
   };
 
+  const latestMessageId = messages[messages.length - 1]?.id;
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [chatData?.messages, isGenerating]);
+  }, [latestMessageId, isGenerating]);
 
   return (
     <AppLayout>
@@ -122,8 +227,8 @@ export default function Chat() {
         {/* Header */}
         <header className="h-16 hidden md:flex items-center px-6 border-b border-border/40 shrink-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-10">
           <h2 className="font-serif text-lg font-medium">
-            {chatData && chatData.messages.length > 0
-              ? chatData.messages[0].content.substring(0, 40) + "..."
+            {messages.length > 0
+              ? messages[0].content.substring(0, 40) + "..."
               : "New Reflection"}
           </h2>
         </header>
@@ -152,7 +257,7 @@ export default function Chat() {
               </div>
             )}
 
-            {isLoadingChat && chatId ? (
+            {chatQuery.isPending && chatId ? (
               <div className="space-y-8">
                 <div className="flex gap-4 max-w-[85%] ml-auto justify-end">
                   <Skeleton className="h-16 w-64 rounded-2xl rounded-tr-sm" />
@@ -164,7 +269,21 @@ export default function Chat() {
                 </div>
               </div>
             ) : (
-              chatData?.messages.map((msg, i) => (
+              <>
+                {chatQuery.hasNextPage && (
+                  <div className="flex justify-center">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={chatQuery.isFetchingNextPage}
+                      onClick={() => void chatQuery.fetchNextPage()}
+                    >
+                      {chatQuery.isFetchingNextPage && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                      Load earlier messages
+                    </Button>
+                  </div>
+                )}
+                {messages.map((msg, i) => (
                 <div 
                   key={msg.id || i} 
                   className={`flex gap-2 md:gap-4 ${msg.role === "user" ? "ml-auto justify-end max-w-[90%] md:max-w-[85%]" : "max-w-[95%] md:max-w-[85%]"}`}
@@ -264,7 +383,8 @@ export default function Chat() {
                     </div>
                   )}
                 </div>
-              ))
+                ))}
+              </>
             )}
             
             {isGenerating && (
@@ -282,6 +402,24 @@ export default function Chat() {
                 </div>
               </div>
             )}
+
+            {sendError && (
+              <div
+                className="ml-10 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm"
+                role="alert"
+                data-testid="chat-send-error"
+              >
+                <p className="text-destructive">{sendError}</p>
+                <div className="mt-2 flex gap-2">
+                  <Button size="sm" variant="outline" onClick={() => void handleSend()}>
+                    Try again
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => setSendError(null)}>
+                    Dismiss
+                  </Button>
+                </div>
+              </div>
+            )}
             
             <div ref={messagesEndRef} />
           </div>
@@ -294,6 +432,7 @@ export default function Chat() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
+              disabled={isGenerating}
               placeholder="Ask for guidance or reflection..."
               className="min-h-[60px] max-h-[200px] w-full resize-none border-0 focus-visible:ring-0 rounded-none bg-transparent py-4 pl-4 pr-14 text-base"
               rows={1}

@@ -8,9 +8,13 @@ import {
   CreateChatResponse,
   GetChatParams,
   GetChatResponse,
+  GetOlderChatMessagesParams,
+  GetOlderChatMessagesResponse,
   ListChatsResponse,
 } from "@workspace/api-zod";
 import { attachUser, requireUser, requireLegalAccepted } from "../lib/auth";
+import { loadMessagePage } from "../lib/chat-history";
+import { saveChatTurn } from "../lib/chat-turn";
 
 const router: IRouter = Router();
 
@@ -72,27 +76,38 @@ router.get("/:id", async (req, res) => {
     return;
   }
 
-  const messages = await pool.query<{
-    id: string;
-    role: "user" | "assistant";
-    content: string;
-    response_payload: Record<string, unknown> | null;
-    created_at: Date;
-  }>(
-    `SELECT id, role, content, response_payload, created_at
-     FROM chat_messages WHERE thread_id = $1 ORDER BY created_at ASC`,
-    [params.id],
-  );
+  const page = await loadMessagePage(params.id);
 
   const data = GetChatResponse.parse({
     id: params.id,
-    messages: messages.rows.map((row) => ({
-      id: row.id,
-      role: row.role,
-      content: row.content,
-      responsePayload: row.response_payload,
-      createdAt: row.created_at.toISOString(),
-    })),
+    ...page,
+  });
+  res.json(data);
+});
+
+router.get("/:id/messages/:before", async (req, res) => {
+  const params = GetOlderChatMessagesParams.parse(req.params);
+  const thread = await pool.query("SELECT id FROM chat_threads WHERE id = $1 AND user_id = $2", [
+    params.id,
+    req.user!.id,
+  ]);
+  if (!thread.rows[0]) {
+    res.status(404).json({ error: "Chat thread not found." });
+    return;
+  }
+
+  const cursor = await pool.query(
+    "SELECT id FROM chat_messages WHERE thread_id = $1 AND id = $2",
+    [params.id, params.before],
+  );
+  if (!cursor.rows[0]) {
+    res.status(404).json({ error: "Chat message cursor not found." });
+    return;
+  }
+
+  const data = GetOlderChatMessagesResponse.parse({
+    id: params.id,
+    ...(await loadMessagePage(params.id, params.before)),
   });
   res.json(data);
 });
@@ -110,30 +125,12 @@ router.post("/:id/turn", async (req, res) => {
     return;
   }
 
-  const client = await pool.connect();
-  try {
-    await client.query("BEGIN");
-    await client.query(
-      `INSERT INTO chat_messages (thread_id, role, content) VALUES ($1, 'user', $2)`,
-      [params.id, body.userText],
-    );
-    const assistantContent =
-      typeof body.assistantPayload.directAnswer === "string" ? body.assistantPayload.directAnswer : "";
-    await client.query(
-      `INSERT INTO chat_messages (thread_id, role, content, response_payload) VALUES ($1, 'assistant', $2, $3::jsonb)`,
-      [params.id, assistantContent, JSON.stringify(body.assistantPayload)],
-    );
-    await client.query(
-      `UPDATE chat_threads SET updated_at = now(), last_message_at = now() WHERE id = $1`,
-      [params.id],
-    );
-    await client.query("COMMIT");
-  } catch (error) {
-    await client.query("ROLLBACK");
-    throw error;
-  } finally {
-    client.release();
-  }
+  await saveChatTurn({
+    threadId: params.id,
+    turnId: body.turnId,
+    userText: body.userText,
+    assistantPayload: body.assistantPayload,
+  });
 
   const data = AppendChatTurnResponse.parse({ ok: true });
   res.json(data);

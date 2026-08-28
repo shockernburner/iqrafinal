@@ -16,6 +16,7 @@ export interface AdminOverview {
   donationsTotal: number;
   donationsCount: number;
   trainingRowsTotal: number;
+  questionsRepliedTotal: number;
   recentUsers: AdminUserSummary[];
   recentDonations: AdminDonationSummary[];
 }

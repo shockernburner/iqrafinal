@@ -230,11 +230,19 @@ export interface ChatMessage {
 export interface ChatThreadDetail {
   id: string;
   messages: ChatMessage[];
+  hasMore: boolean;
+  /**
+     * Pass this message id as `before` to load the next older page
+     * @nullable
+     */
+  nextCursor: string | null;
 }
 
 export type ChatTurnInputAssistantPayload = { [key: string]: unknown };
 
 export interface ChatTurnInput {
+  /** Client-generated idempotency key for this completed turn */
+  turnId: string;
   userText: string;
   assistantPayload: ChatTurnInputAssistantPayload;
 }
@@ -264,6 +272,7 @@ export interface AdminOverview {
   donationsTotal: number;
   donationsCount: number;
   trainingRowsTotal: number;
+  questionsRepliedTotal: number;
   recentUsers: AdminUserSummary[];
   recentDonations: AdminDonationSummary[];
 }

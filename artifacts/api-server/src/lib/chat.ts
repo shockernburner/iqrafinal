@@ -63,13 +63,13 @@ function composeDisplayMarkdown(args: {
   return parts.join("\n");
 }
 
-export async function generateIqraChatResponse(prompt: string): Promise<ChatApiPayload> {
+export async function generateIqraChatResponse(prompt: string, signal?: AbortSignal): Promise<ChatApiPayload> {
   const policy = assessIqraPolicy(prompt);
 
   if (policy.requiresComparativeReligionRefusal) {
     return {
       basmala: formatBasmala(),
-      directAnswer: await localizeMessage(prompt, COMPARATIVE_RELIGION_REFUSAL),
+      directAnswer: await localizeMessage(prompt, COMPARATIVE_RELIGION_REFUSAL, signal),
       framework: ["Scope: IQRA only addresses Islamic principles, lifestyle, and ethics"],
       source: "IQRA system policy",
       sourceLinks: [],
@@ -83,7 +83,7 @@ export async function generateIqraChatResponse(prompt: string): Promise<ChatApiP
     findRelevantTrainingRecords(prompt, 3),
   ]);
 
-  const llm = await generateLlmChatResponse(prompt, chunks, examples);
+  const llm = await generateLlmChatResponse(prompt, chunks, examples, signal);
 
   // Without knowledge base support, confidence is capped at "medium" — genuine
   // "high" confidence requires grounding in the uploaded document library.

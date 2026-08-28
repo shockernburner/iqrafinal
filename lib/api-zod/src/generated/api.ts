@@ -222,7 +222,7 @@ export const CreateChatResponse = zod.object({
 
 
 /**
- * @summary Get a chat thread with its messages
+ * @summary Get the newest bounded page of a chat thread
  */
 export const GetChatParams = zod.object({
   "id": zod.coerce.string()
@@ -236,7 +236,31 @@ export const GetChatResponse = zod.object({
   "content": zod.string(),
   "responsePayload": zod.record(zod.string(), zod.unknown()).nullable(),
   "createdAt": zod.string()
-}))
+})),
+  "hasMore": zod.boolean(),
+  "nextCursor": zod.string().nullable().describe('Pass this message id as `before` to load the next older page')
+})
+
+
+/**
+ * @summary Get the next bounded page of messages older than a cursor
+ */
+export const GetOlderChatMessagesParams = zod.object({
+  "id": zod.coerce.string(),
+  "before": zod.coerce.string().describe('Exclusive message-id cursor returned by the previous page')
+})
+
+export const GetOlderChatMessagesResponse = zod.object({
+  "id": zod.string(),
+  "messages": zod.array(zod.object({
+  "id": zod.string(),
+  "role": zod.enum(['user', 'assistant']),
+  "content": zod.string(),
+  "responsePayload": zod.record(zod.string(), zod.unknown()).nullable(),
+  "createdAt": zod.string()
+})),
+  "hasMore": zod.boolean(),
+  "nextCursor": zod.string().nullable().describe('Pass this message id as `before` to load the next older page')
 })
 
 
@@ -248,6 +272,7 @@ export const AppendChatTurnParams = zod.object({
 })
 
 export const AppendChatTurnBody = zod.object({
+  "turnId": zod.string().uuid().describe('Client-generated idempotency key for this completed turn'),
   "userText": zod.string(),
   "assistantPayload": zod.record(zod.string(), zod.unknown())
 })
@@ -268,6 +293,7 @@ export const GetAdminOverviewResponse = zod.object({
   "donationsTotal": zod.number(),
   "donationsCount": zod.number(),
   "trainingRowsTotal": zod.number(),
+  "questionsRepliedTotal": zod.number(),
   "recentUsers": zod.array(zod.object({
   "id": zod.string(),
   "email": zod.string().nullable(),

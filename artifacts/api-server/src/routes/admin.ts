@@ -141,7 +141,7 @@ async function parseTrainingDataset(
 router.use(attachUser, requireAdmin, requireLegalAccepted);
 
 router.get("/overview", async (_req, res) => {
-  const [documentsTotal, activeDocuments, usersTotal, adminsTotal, donations, trainingRecords, recentUsers] =
+  const [documentsTotal, activeDocuments, usersTotal, adminsTotal, donations, trainingRecords, recentUsers, questionsReplied] =
     await Promise.all([
       pool.query<{ count: string }>("SELECT count(*) FROM documents"),
       pool.query<{ count: string }>("SELECT count(*) FROM documents WHERE status = 'active'"),
@@ -155,6 +155,7 @@ router.get("/overview", async (_req, res) => {
       pool.query<{ id: string; email: string | null; name: string | null; role: string; created_at: Date }>(
         "SELECT id, email, name, role, created_at FROM users ORDER BY created_at DESC LIMIT 5",
       ),
+      pool.query<{ count: string }>("SELECT count FROM site_stats WHERE key = 'questions_replied'"),
     ]);
 
   // Totals come from the donations table (same source as the /admin/donations
@@ -174,6 +175,7 @@ router.get("/overview", async (_req, res) => {
     donationsTotal: Number(donationsTotalResult.rows[0]?.total ?? 0),
     donationsCount: Number(donationsCountResult.rows[0]?.count ?? 0),
     trainingRowsTotal: trainingRecords.length,
+    questionsRepliedTotal: Number(questionsReplied.rows[0]?.count ?? 0),
     recentUsers: recentUsers.rows.map((row) => ({
       id: row.id,
       email: row.email,

@@ -1119,7 +1119,7 @@ export const getGetChatUrl = (id: string,) => {
 }
 
 /**
- * @summary Get a chat thread with its messages
+ * @summary Get the newest bounded page of a chat thread
  */
 export const getChat = async (id: string, options?: RequestInit): Promise<ChatThreadDetail> => {
 
@@ -1166,7 +1166,7 @@ export type GetChatQueryError = ErrorType<ErrorResponse>
 
 
 /**
- * @summary Get a chat thread with its messages
+ * @summary Get the newest bounded page of a chat thread
  */
 
 export function useGetChat<TData = Awaited<ReturnType<typeof getChat>>, TError = ErrorType<ErrorResponse>>(
@@ -1175,6 +1175,88 @@ export function useGetChat<TData = Awaited<ReturnType<typeof getChat>>, TError =
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetChatQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetOlderChatMessagesUrl = (id: string,
+    before: string,) => {
+
+
+
+
+  return `/api/chats/${id}/messages/${before}`
+}
+
+/**
+ * @summary Get the next bounded page of messages older than a cursor
+ */
+export const getOlderChatMessages = async (id: string,
+    before: string, options?: RequestInit): Promise<ChatThreadDetail> => {
+
+  return customFetch<ChatThreadDetail>(getGetOlderChatMessagesUrl(id,before),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetOlderChatMessagesQueryKey = (id: string,
+    before: string,) => {
+    return [
+    `/api/chats/${id}/messages/${before}`
+    ] as const;
+    }
+
+
+export const getGetOlderChatMessagesQueryOptions = <TData = Awaited<ReturnType<typeof getOlderChatMessages>>, TError = ErrorType<ErrorResponse>>(id: string,
+    before: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOlderChatMessages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetOlderChatMessagesQueryKey(id,before);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getOlderChatMessages>>> = ({ signal }) => getOlderChatMessages(id,before, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined && before !== null && before !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getOlderChatMessages>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetOlderChatMessagesQueryResult = NonNullable<Awaited<ReturnType<typeof getOlderChatMessages>>>
+export type GetOlderChatMessagesQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary Get the next bounded page of messages older than a cursor
+ */
+
+export function useGetOlderChatMessages<TData = Awaited<ReturnType<typeof getOlderChatMessages>>, TError = ErrorType<ErrorResponse>>(
+ id: string,
+    before: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOlderChatMessages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetOlderChatMessagesQueryOptions(id,before,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

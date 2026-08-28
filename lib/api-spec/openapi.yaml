@@ -333,7 +333,7 @@ paths:
     get:
       operationId: getChat
       tags: [chats]
-      summary: Get a chat thread with its messages
+      summary: Get the newest bounded page of a chat thread
       parameters:
         - name: id
           in: path
@@ -355,6 +355,42 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
         "404":
           description: Chat not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /chats/{id}/messages/{before}:
+    get:
+      operationId: getOlderChatMessages
+      tags: [chats]
+      summary: Get the next bounded page of messages older than a cursor
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: before
+          in: path
+          required: true
+          description: Exclusive message-id cursor returned by the previous page
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Older chat message page
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatThreadDetail"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Chat or cursor not found
           content:
             application/json:
               schema:
@@ -1266,7 +1302,7 @@ components:
           type: string
     ChatThreadDetail:
       type: object
-      required: [id, messages]
+      required: [id, messages, hasMore, nextCursor]
       properties:
         id:
           type: string
@@ -1274,10 +1310,19 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ChatMessage"
+        hasMore:
+          type: boolean
+        nextCursor:
+          type: ["string", "null"]
+          description: Pass this message id as `before` to load the next older page
     ChatTurnInput:
       type: object
-      required: [userText, assistantPayload]
+      required: [turnId, userText, assistantPayload]
       properties:
+        turnId:
+          type: string
+          format: uuid
+          description: Client-generated idempotency key for this completed turn
         userText:
           type: string
         assistantPayload:
@@ -1294,6 +1339,7 @@ components:
         - donationsTotal
         - donationsCount
         - trainingRowsTotal
+        - questionsRepliedTotal
         - recentUsers
         - recentDonations
       properties:
@@ -1310,6 +1356,8 @@ components:
         donationsCount:
           type: integer
         trainingRowsTotal:
+          type: integer
+        questionsRepliedTotal:
           type: integer
         recentUsers:
           type: array

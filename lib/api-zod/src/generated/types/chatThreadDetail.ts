@@ -10,4 +10,10 @@ import type { ChatMessage } from './chatMessage';
 export interface ChatThreadDetail {
   id: string;
   messages: ChatMessage[];
+  hasMore: boolean;
+  /**
+     * Pass this message id as `before` to load the next older page
+     * @nullable
+     */
+  nextCursor: string | null;
 }
