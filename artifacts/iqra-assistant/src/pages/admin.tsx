@@ -243,14 +243,33 @@ export default function AdminDashboard() {
                   <p className="text-xs text-muted-foreground mt-1">{overview.adminsTotal} admins</p>
                 </CardContent>
               </Card>
-              <Card>
+              <Card className="relative overflow-hidden border-emerald-900/15 bg-gradient-to-br from-emerald-950/[0.06] via-card to-amber-50/50">
+                <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-900 via-emerald-700 to-amber-500" />
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Knowledge Docs</CardTitle>
-                  <FileText className="w-4 h-4 text-muted-foreground" />
+                  <div>
+                    <CardTitle className="text-sm font-medium text-foreground">Knowledge Files Indexed</CardTitle>
+                    <p className="mt-1 flex items-center gap-1.5 text-[11px] font-medium text-emerald-800">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-600 shadow-[0_0_0_3px_rgba(5,150,105,0.12)]" />
+                      Retrieval live
+                    </p>
+                  </div>
+                  <Database className="w-4 h-4 text-emerald-800" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{overview.documentsTotal}</div>
-                  <p className="text-xs text-muted-foreground mt-1">{overview.activeDocuments} active</p>
+                  <div className="text-3xl font-bold tabular-nums">{overview.activeDocuments.toLocaleString()}</div>
+                  <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-emerald-950/10">
+                    <div
+                      className="h-full rounded-full bg-emerald-800 transition-all duration-500"
+                      style={{
+                        width: `${overview.documentsTotal > 0
+                          ? Math.round((overview.activeDocuments / overview.documentsTotal) * 100)
+                          : 0}%`,
+                      }}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1.5">
+                    {overview.activeDocuments.toLocaleString()} of {overview.documentsTotal.toLocaleString()} uploaded files ready
+                  </p>
                 </CardContent>
               </Card>
               <Card>
