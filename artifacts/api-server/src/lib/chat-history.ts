@@ -23,8 +23,16 @@ function serializeMessage(row: ChatMessageRow) {
 export async function loadMessagePage(threadId: string, before?: string) {
   const values: string[] = [threadId];
   const cursorFilter = before
-    ? `AND (created_at, id) < (
-         SELECT created_at, id FROM chat_messages
+    ? `AND (
+         created_at,
+         CASE WHEN role = 'assistant' THEN 1 ELSE 0 END,
+         id
+       ) < (
+         SELECT
+           created_at,
+           CASE WHEN role = 'assistant' THEN 1 ELSE 0 END,
+           id
+         FROM chat_messages
          WHERE thread_id = $1 AND id = $2
        )`
     : "";
@@ -35,7 +43,10 @@ export async function loadMessagePage(threadId: string, before?: string) {
      FROM chat_messages
      WHERE thread_id = $1
        ${cursorFilter}
-     ORDER BY created_at DESC, id DESC
+     ORDER BY
+       created_at DESC,
+       CASE WHEN role = 'assistant' THEN 1 ELSE 0 END DESC,
+       id DESC
      LIMIT ${CHAT_PAGE_SIZE + 1}`,
     values,
   );

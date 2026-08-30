@@ -42,12 +42,28 @@ describe("bounded chat history pages", () => {
     query.mockResolvedValue({ rows: [row(1)] });
     const page = await loadMessagePage("thread-1", "message-002");
 
-    expect(query).toHaveBeenCalledWith(expect.stringContaining("(created_at, id) <"), [
-      "thread-1",
-      "message-002",
-    ]);
+    expect(query).toHaveBeenCalledWith(
+      expect.stringContaining("CASE WHEN role = 'assistant' THEN 1 ELSE 0 END"),
+      ["thread-1", "message-002"],
+    );
     expect(page.messages.map((message) => message.id)).toEqual(["message-001"]);
     expect(page.hasMore).toBe(false);
     expect(page.nextCursor).toBeNull();
+  });
+
+  it("keeps an assistant reply after its question when timestamps are identical", async () => {
+    const timestamp = new Date("2026-08-30T10:00:00.000Z");
+    const question = { ...row(1), role: "user" as const, created_at: timestamp };
+    const answer = { ...row(2), role: "assistant" as const, created_at: timestamp };
+
+    // The database returns newest-first. With the explicit role tie-breaker,
+    // assistant is newest and reversing for display yields question then reply.
+    query.mockResolvedValue({ rows: [answer, question] });
+    const page = await loadMessagePage("thread-1");
+
+    expect(page.messages.map((message) => message.role)).toEqual(["user", "assistant"]);
+    expect(query.mock.calls[0]?.[0]).toContain(
+      "CASE WHEN role = 'assistant' THEN 1 ELSE 0 END DESC",
+    );
   });
 });
