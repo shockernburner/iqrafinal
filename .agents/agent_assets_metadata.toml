@@ -70,3 +70,31 @@ mtime_ms = 1788243248002
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:e106b61d-4990-471f-9ef5-2882fe79d28b/79dffd11-6a26-49df-841c-e5f4c16096d6/82c70082-c6bc-4459-9b64-860bc1744b68"
 storage_version_token = "1788243268318889"
 content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+
+[[outputs]]
+id = "CPb6pY6DdNmHCBFAeFDQ9"
+uri = "file://outputs/Final_IQRA_Investment_Proposal_REVIEWED_RED_v2.pptx"
+type = "slides"
+title = "IQRA Investment Proposal — Corrected Metrics"
+description = "Final reviewed deck with 26,710 indexed knowledge files and 405 training rows stated separately; edits remain red."
+logical_id = "9762a11e-038c-466e-b256-5266b0ca42df"
+content_hash = "sha256:04ed7b8f9daadbfa3c2ee0d00220d259815a30b3dcdbe76d8f12f6e887c94585"
+size = 5114907
+mtime_ms = 1788243487267
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:e106b61d-4990-471f-9ef5-2882fe79d28b/9762a11e-038c-466e-b256-5266b0ca42df/77c6cafc-6a63-4c5d-b42d-b0c65a235ab4"
+storage_version_token = "1788243511292224"
+content_type = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+
+[[outputs]]
+id = "eYYmBhw5vBsoR4jJ2WeWL"
+uri = "file://outputs/final_script_REVIEWED_RED_v2.docx"
+type = "word_document"
+title = "IQRA Pitch Script — Corrected Metrics"
+description = "Final reviewed script with knowledge files and training rows clearly distinguished; edits remain red."
+logical_id = "c5a93b35-c9ce-4d22-bc79-4f1d3609f717"
+content_hash = "sha256:6d2b92d00cf7c299c99d120b2e0bb40fa47ca124b1e59be4887d8244a8a0177b"
+size = 16311
+mtime_ms = 1788243487281
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:e106b61d-4990-471f-9ef5-2882fe79d28b/c5a93b35-c9ce-4d22-bc79-4f1d3609f717/7272bd64-ebfc-4095-beb5-438126136bbd"
+storage_version_token = "1788243512625077"
+content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
