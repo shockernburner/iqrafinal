@@ -6,33 +6,67 @@ id = "osg_ehwv5ZCULAbPWKnfk"
 uri = "file://artifacts/iqra-promo/public/audio/bg_music.mp3"
 type = "audio"
 title = "background music"
+logical_id = "17eb5152-d07c-4c92-a102-887092be9d43"
 
 [[outputs]]
 id = "vONjrJy7FDb4KkIJaT0Av"
 uri = "file://exports/IQRA_Investor_Partner_List.xlsx"
 type = "table"
 title = "IQRA Investor & Partner Prospect List (38 prospects)"
+logical_id = "da1a1403-a2ad-4dd6-b642-1b6b5af54376"
 
 [[outputs]]
 id = "r1S7Je0nHK0bpojdVaLnc"
 uri = "file://exports/IQRA_ScaleUp_Cost_Model_Year1.xlsx"
 type = "table"
 title = "IQRA Year-1 Cost Model (Replit + You)"
+logical_id = "631c6c67-8bef-4a9f-bc25-7a3b324f4407"
 
 [[outputs]]
 id = "dLVS4mzjU6zKtO_GUj7WC"
 uri = "file://.local/outputs/iqra.pptx"
 type = "slides"
 title = "iqra.pptx"
+logical_id = "cf7b1b06-9983-4f74-8a5f-26896effd9f6"
 
 [[outputs]]
 id = "eqCq3XHBE7gmskAsbyzDB"
 uri = "file://exports/IQRA-Investment-Pitch-Script.pdf"
 type = "pdf"
 title = "IQRA Investment Pitch — Presenter Script (PDF)"
+logical_id = "14a8e84c-8c63-4e23-8246-1108e5cd7205"
 
 [[outputs]]
 id = "u1hzlyGV4dHV86iJkvlzV"
 uri = "file://exports/IQRA-Investment-Pitch-Script.docx"
 type = "word_document"
 title = "IQRA Investment Pitch — Presenter Script (DOCX)"
+logical_id = "22c60a83-4de1-46f7-8394-1a778cb2b497"
+
+[[outputs]]
+id = "6Km9ZA7heevVWew_Qly9d"
+uri = "file://outputs/Final_IQRA_Investment_Proposal_REVIEWED_RED.pptx"
+type = "slides"
+title = "IQRA Investment Proposal — Reviewed"
+description = "Revised investor deck with all editorial changes shown in red font."
+logical_id = "b4a45251-0d8b-4e38-9f9d-b72c7035fd08"
+content_hash = "sha256:22964d64a852d1511e76f747075dd29303f91a9a4e82c0e40c7eb2d9bc8fcd54"
+size = 5114915
+mtime_ms = 1788243247989
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:e106b61d-4990-471f-9ef5-2882fe79d28b/b4a45251-0d8b-4e38-9f9d-b72c7035fd08/f89a54c3-880e-45c5-af5d-b4d1665f6e07"
+storage_version_token = "1788243266996250"
+content_type = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+
+[[outputs]]
+id = "TA7-6qjdsuwBHHj3WPUUm"
+uri = "file://outputs/final_script_REVIEWED_RED.docx"
+type = "word_document"
+title = "IQRA Pitch Script — Reviewed"
+description = "Revised pitch script with all editorial changes shown in red font."
+logical_id = "79dffd11-6a26-49df-841c-e5f4c16096d6"
+content_hash = "sha256:52f66312e5da99b1427a9acc881271213fa9780e89d71e32f963e885d3c65b33"
+size = 16326
+mtime_ms = 1788243248002
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:e106b61d-4990-471f-9ef5-2882fe79d28b/79dffd11-6a26-49df-841c-e5f4c16096d6/82c70082-c6bc-4459-9b64-860bc1744b68"
+storage_version_token = "1788243268318889"
+content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
