@@ -98,3 +98,17 @@ mtime_ms = 1788243487281
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:e106b61d-4990-471f-9ef5-2882fe79d28b/c5a93b35-c9ce-4d22-bc79-4f1d3609f717/7272bd64-ebfc-4095-beb5-438126136bbd"
 storage_version_token = "1788243512625077"
 content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+
+[[outputs]]
+id = "SJCagLMvH_jQz7vsxdiCn"
+uri = "file://outputs/IQRA_Plan_Nov2026_Mar2027_USD.xlsx"
+type = "table"
+title = "IQRA November–March Budget — USD"
+description = "Completed monthly budget for growth to 16,000 peak concurrent users, with editable assumptions, acquisition and AI usage calculations, legal/setup breakdown, sources, and sensitivity scenarios. Original template preserved."
+logical_id = "03fc3931-454a-47df-8a5a-f7d8a11e8ba8"
+content_hash = "sha256:6abbe32139abe559144b81820bcab247b7c9dec9e7138df88c7b63e86e53fdd3"
+size = 22609
+mtime_ms = 1790054838845
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:e106b61d-4990-471f-9ef5-2882fe79d28b/03fc3931-454a-47df-8a5a-f7d8a11e8ba8/d7334816-3156-4553-b055-3086667ee641"
+storage_version_token = "1790054845618708"
+content_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
