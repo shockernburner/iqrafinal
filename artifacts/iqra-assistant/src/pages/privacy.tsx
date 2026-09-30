@@ -47,7 +47,8 @@ export default function Privacy() {
           <section>
             <h2 className="font-serif text-xl font-semibold mb-2">2. What data we collect</h2>
             <ul className="list-disc pl-6 mt-2 space-y-1">
-              <li><span className="font-medium">Account information</span> — your name, email address, and a securely hashed password.</li>
+              <li><span className="font-medium">Account information</span> — your name and email address. If you register with email and password, we also store a securely hashed password.</li>
+              <li><span className="font-medium">Google sign-in information</span> — if you choose "Continue with Google", Google shares your name, email address, profile picture, and a unique Google account identifier with us. We use these only to create and sign in to your account. We do not receive your Google password, and no password is stored for accounts that sign in with Google.</li>
               <li><span className="font-medium">Conversations</span> — the messages you send and the responses generated for you, stored so you can revisit your reflections.</li>
               <li><span className="font-medium">Donation information</span> — if you donate, our payment provider processes your payment; we receive confirmation details but not your full card number.</li>
               <li><span className="font-medium">Usage and technical data</span> — basic logs (such as timestamps and error information) needed to operate and secure the Service.</li>
@@ -57,10 +58,10 @@ export default function Privacy() {
           <section>
             <h2 className="font-serif text-xl font-semibold mb-2">3. How we use your data</h2>
             <ul className="list-disc pl-6 mt-2 space-y-1">
-              <li>To provide, maintain, and secure the Service;</li>
+              <li>To provide, maintain, and secure the Service, including signing you in with email and password or with Google;</li>
               <li>To generate responses to your questions and keep your conversation history;</li>
               <li>To process voluntary donations;</li>
-              <li>To send you essential transactional emails (for example, a welcome message or a donation acknowledgement);</li>
+              <li>To send you essential transactional emails (for example, a welcome message, a donation acknowledgement, or a password-reset link);</li>
               <li>To comply with legal obligations and enforce our Terms.</li>
             </ul>
           </section>
@@ -73,7 +74,9 @@ export default function Privacy() {
               <li><span className="font-medium">PostgreSQL database host:</span> securely stores your account, conversations, and related records.</li>
               <li><span className="font-medium">Replit (hosting &amp; file storage):</span> runs the application and stores uploaded knowledge-base files.</li>
               <li><span className="font-medium">Stripe (payments):</span> processes donation payments. We do not store your full card details.</li>
-              <li><span className="font-medium">Resend (email):</span> delivers transactional emails such as welcome and donation messages.</li>
+              <li><span className="font-medium">Google (sign-in):</span> if you choose to sign in with Google, Google authenticates you and shares your basic profile information with us. Google's use of your data is governed by the{" "}
+                <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Google Privacy Policy</a>.</li>
+              <li><span className="font-medium">Resend (email):</span> delivers transactional emails such as welcome, donation, and password-reset messages.</li>
             </ul>
           </section>
 
@@ -81,7 +84,9 @@ export default function Privacy() {
             <h2 className="font-serif text-xl font-semibold mb-2">5. Data storage and security</h2>
             <p>
               Data is transmitted over encrypted connections (HTTPS) and stored with access controls.
-              Passwords are stored only as salted hashes and are never kept in plain text. No method of
+              Passwords are stored only as salted hashes and are never kept in plain text; password-reset
+              links are single-use and expire after one hour. If you sign in with Google, authentication
+              is handled by Google and we store no password for your account. No method of
               transmission or storage is completely secure, but we take reasonable measures to protect
               your information.
             </p>
@@ -95,7 +100,9 @@ export default function Privacy() {
               these rights, contact us at{" "}
               <a href="mailto:contact@iqra.live" className="text-primary hover:underline">
                 contact@iqra.live
-              </a>. You can also request deletion of your account and associated data.
+              </a>. You can also request deletion of your account and associated data. If you signed in
+              with Google, you can additionally revoke IQRA Assistant's access at any time from your Google
+              Account settings (Security → Third-party apps &amp; services).
             </p>
           </section>
 

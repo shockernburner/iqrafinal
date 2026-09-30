@@ -6,6 +6,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useLocation, Link } from "wouter";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { PasswordInput } from "@/components/password-input";
+import { GoogleSignIn } from "@/components/google-sign-in";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import logoPng from "@/assets/logo.png";
@@ -13,11 +15,17 @@ import { Loader2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { useSeo } from "@/hooks/use-seo";
 
-const registerSchema = z.object({
-  name: z.string().min(2, { message: "Name must be at least 2 characters." }),
-  email: z.string().email({ message: "Please enter a valid email address." }),
-  password: z.string().min(12, { message: "Password must be at least 12 characters." }),
-});
+const registerSchema = z
+  .object({
+    name: z.string().min(2, { message: "Name must be at least 2 characters." }),
+    email: z.string().email({ message: "Please enter a valid email address." }),
+    password: z.string().min(12, { message: "Password must be at least 12 characters." }),
+    confirm: z.string(),
+  })
+  .refine((v) => v.password === v.confirm, {
+    message: "Passwords do not match.",
+    path: ["confirm"],
+  });
 
 export default function Register() {
   useSeo({
@@ -36,6 +44,7 @@ export default function Register() {
       name: "",
       email: "",
       password: "",
+      confirm: "",
     },
   });
 
@@ -56,8 +65,8 @@ export default function Register() {
     }
   });
 
-  function onSubmit(values: z.infer<typeof registerSchema>) {
-    registerMutation.mutate({ data: values });
+  function onSubmit({ name, email, password }: z.infer<typeof registerSchema>) {
+    registerMutation.mutate({ data: { name, email, password } });
   }
 
   return (
@@ -72,9 +81,10 @@ export default function Register() {
         <Card className="border-border/50 shadow-lg shadow-primary/5">
           <CardHeader>
             <CardTitle className="font-serif text-2xl">Create Account</CardTitle>
-            <CardDescription>Join to start your journey of reflection</CardDescription>
+            <CardDescription>Join to start your journey of reflection — sign up with Google, no password needed</CardDescription>
           </CardHeader>
           <CardContent>
+            <GoogleSignIn mode="signup" />
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <FormField
@@ -97,7 +107,7 @@ export default function Register() {
                     <FormItem>
                       <FormLabel>Email</FormLabel>
                       <FormControl>
-                        <Input placeholder="name@example.com" {...field} className="bg-background" />
+                        <Input type="email" autoComplete="email" placeholder="name@example.com" {...field} className="bg-background" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -110,7 +120,20 @@ export default function Register() {
                     <FormItem>
                       <FormLabel>Password</FormLabel>
                       <FormControl>
-                        <Input type="password" placeholder="••••••••" {...field} className="bg-background" />
+                        <PasswordInput autoComplete="new-password" placeholder="At least 12 characters" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="confirm"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Confirm Password</FormLabel>
+                      <FormControl>
+                        <PasswordInput autoComplete="new-password" placeholder="Re-enter your password" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

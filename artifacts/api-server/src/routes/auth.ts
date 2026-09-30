@@ -1,11 +1,15 @@
 import crypto from "node:crypto";
 import { Router, type IRouter } from "express";
+import { OAuth2Client } from "google-auth-library";
 import { pool } from "@workspace/db";
 import {
   AcceptLegalResponse,
   ForgotPasswordBody,
   ForgotPasswordResponse,
+  GetAuthConfigResponse,
   GetSessionResponse,
+  GoogleSignInBody,
+  GoogleSignInResponse,
   LoginBody,
   LoginResponse,
   LogoutResponse,
@@ -93,6 +97,149 @@ router.post("/auth/login", async (req, res) => {
   const legalAccepted = user.legal_accepted_version === CURRENT_LEGAL_VERSION;
   const data = LoginResponse.parse({ ...sessionUser, legalAccepted });
   res.json(data);
+});
+
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID?.trim() || null;
+const googleClient = GOOGLE_CLIENT_ID ? new OAuth2Client(GOOGLE_CLIENT_ID) : null;
+
+// Public: lets the frontend know whether (and with which client ID) to render
+// the Google button, so enabling Google sign-in needs only a server env var.
+router.get("/auth/config", (_req, res) => {
+  res.json(GetAuthConfigResponse.parse({ googleClientId: GOOGLE_CLIENT_ID }));
+});
+
+// Sign in or register with a Google Identity Services ID token. Accounts are
+// matched by Google subject ID first, then linked by verified email so an
+// existing email/password user can also sign in with Google. New Google users
+// get no password (password_hash stays NULL).
+router.post("/auth/google", async (req, res) => {
+  if (!googleClient || !GOOGLE_CLIENT_ID) {
+    res.status(501).json({ error: "Google sign-in is not configured." });
+    return;
+  }
+  const body = GoogleSignInBody.parse(req.body);
+
+  let payload;
+  try {
+    const ticket = await googleClient.verifyIdToken({
+      idToken: body.credential,
+      audience: GOOGLE_CLIENT_ID,
+    });
+    payload = ticket.getPayload();
+  } catch (error) {
+    req.log?.warn?.({ err: error }, "Google ID token verification failed");
+  }
+  if (!payload?.sub || !payload.email || !payload.email_verified) {
+    res.status(401).json({ error: "Google sign-in failed. Please try again." });
+    return;
+  }
+
+  const googleSub = payload.sub;
+  const email = payload.email.trim().toLowerCase();
+  const name = payload.name?.trim().slice(0, 120) || email;
+  const image = payload.picture ?? null;
+
+  type UserRow = {
+    id: string;
+    email: string;
+    name: string | null;
+    role: "user" | "admin";
+    is_active: boolean;
+    legal_accepted_version: string | null;
+  };
+  const USER_COLUMNS = "u.id, u.email, u.name, u.role, u.is_active, u.legal_accepted_version";
+
+  let isNewUser = false;
+  const client = await pool.connect();
+  let user: UserRow | undefined;
+  try {
+    await client.query("BEGIN");
+
+    const linked = await client.query<UserRow>(
+      `SELECT ${USER_COLUMNS} FROM accounts a JOIN users u ON u.id = a."userId"
+       WHERE a.provider = 'google' AND a."providerAccountId" = $1`,
+      [googleSub],
+    );
+    user = linked.rows[0];
+
+    if (!user) {
+      const existing = await client.query<UserRow>(
+        `SELECT ${USER_COLUMNS} FROM users u WHERE u.email = $1 FOR UPDATE`,
+        [email],
+      );
+      user = existing.rows[0];
+
+      if (!user) {
+        const inserted = await client.query<UserRow>(
+          `INSERT INTO users AS u (email, name, image, "emailVerified", role)
+           VALUES ($1, $2, $3, now(), 'user')
+           ON CONFLICT (email) DO NOTHING
+           RETURNING ${USER_COLUMNS}`,
+          [email, name, image],
+        );
+        user = inserted.rows[0];
+        if (!user) {
+          // Lost a race with a concurrent registration for the same email.
+          const retry = await client.query<UserRow>(
+            `SELECT ${USER_COLUMNS} FROM users u WHERE u.email = $1`,
+            [email],
+          );
+          user = retry.rows[0];
+        } else {
+          isNewUser = true;
+        }
+      } else {
+        // Google has verified ownership of this email, so mark it verified.
+        await client.query(
+          `UPDATE users SET "emailVerified" = COALESCE("emailVerified", now()),
+             image = COALESCE(image, $2), updated_at = now() WHERE id = $1`,
+          [user.id, image],
+        );
+      }
+
+      if (user) {
+        await client.query(
+          `INSERT INTO accounts ("userId", type, provider, "providerAccountId")
+           VALUES ($1, 'oidc', 'google', $2)
+           ON CONFLICT (provider, "providerAccountId") DO NOTHING`,
+          [user.id, googleSub],
+        );
+        await client.query(
+          `INSERT INTO audit_log (action, entity_type, entity_id, metadata)
+           VALUES ($1, 'user', $2, $3::jsonb)`,
+          [
+            isNewUser ? "user_registered" : "google_account_linked",
+            email,
+            JSON.stringify({ source: "google" }),
+          ],
+        );
+      }
+    }
+
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => {});
+    throw error;
+  } finally {
+    client.release();
+  }
+
+  if (!user || !user.is_active) {
+    res.status(401).json({ error: "This account is not available. Please contact support." });
+    return;
+  }
+
+  if (isNewUser) {
+    sendWelcomeEmail(user.email, user.name ?? user.email).catch((error) => {
+      req.log?.warn?.({ err: error }, "Failed to send welcome email");
+    });
+  }
+
+  const sessionUser = { id: user.id, email: user.email, name: user.name, role: user.role };
+  setSessionCookie(res, signSessionToken(sessionUser));
+
+  const legalAccepted = user.legal_accepted_version === CURRENT_LEGAL_VERSION;
+  res.json(GoogleSignInResponse.parse({ ...sessionUser, legalAccepted }));
 });
 
 const RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
