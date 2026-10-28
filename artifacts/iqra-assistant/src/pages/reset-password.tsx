@@ -1,16 +1,15 @@
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useResetPassword, getGetSessionQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useLocation, useSearch, Link } from "wouter";
-import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/password-input";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import logoPng from "@/assets/logo.png";
-import { Loader2, Eye, EyeOff } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSeo } from "@/hooks/use-seo";
 
@@ -36,8 +35,6 @@ export default function ResetPassword() {
   const token = new URLSearchParams(search).get("token") ?? "";
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
 
   const form = useForm<z.infer<typeof resetSchema>>({
     resolver: zodResolver(resetSchema),
@@ -90,24 +87,7 @@ export default function ResetPassword() {
                       <FormItem>
                         <FormLabel>New password</FormLabel>
                         <FormControl>
-                          <div className="relative">
-                            <Input
-                              type={showPassword ? "text" : "password"}
-                              autoComplete="new-password"
-                              placeholder="••••••••••••"
-                              {...field}
-                              className="bg-background pr-10"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => setShowPassword((v) => !v)}
-                              aria-pressed={showPassword}
-                              aria-label={showPassword ? "Hide password" : "Show password"}
-                              className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground"
-                            >
-                              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                            </button>
-                          </div>
+                          <PasswordInput autoComplete="new-password" placeholder="••••••••••••" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -120,24 +100,7 @@ export default function ResetPassword() {
                       <FormItem>
                         <FormLabel>Confirm password</FormLabel>
                         <FormControl>
-                          <div className="relative">
-                            <Input
-                              type={showConfirm ? "text" : "password"}
-                              autoComplete="new-password"
-                              placeholder="••••••••••••"
-                              {...field}
-                              className="bg-background pr-10"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => setShowConfirm((v) => !v)}
-                              aria-pressed={showConfirm}
-                              aria-label={showConfirm ? "Hide password" : "Show password"}
-                              className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground"
-                            >
-                              {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                            </button>
-                          </div>
+                          <PasswordInput autoComplete="new-password" placeholder="••••••••••••" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

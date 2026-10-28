@@ -58,6 +58,19 @@ export interface RegisterInput {
   name?: string;
 }
 
+export interface AuthConfig {
+  /**
+     * Google OAuth web client ID, or null when Google sign-in is disabled.
+     * @nullable
+     */
+  googleClientId: string | null;
+}
+
+export interface GoogleSignInInput {
+  /** The ID token (JWT) returned by Google Identity Services. */
+  credential: string;
+}
+
 export interface ForgotPasswordInput {
   email: string;
 }

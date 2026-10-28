@@ -97,6 +97,30 @@ export const RegisterResponse = zod.object({
 
 
 /**
+ * @summary Public auth configuration (which sign-in providers are enabled)
+ */
+export const GetAuthConfigResponse = zod.object({
+  "googleClientId": zod.string().nullable().describe('Google OAuth web client ID, or null when Google sign-in is disabled.')
+})
+
+
+/**
+ * @summary Sign in or register with a Google ID token
+ */
+export const GoogleSignInBody = zod.object({
+  "credential": zod.string().describe('The ID token (JWT) returned by Google Identity Services.')
+})
+
+export const GoogleSignInResponse = zod.object({
+  "id": zod.string(),
+  "email": zod.string(),
+  "name": zod.string().nullable(),
+  "role": zod.enum(['user', 'admin']),
+  "legalAccepted": zod.boolean().describe('Whether the user has accepted the current version of the legal documents.')
+})
+
+
+/**
  * @summary Request a password reset email
  */
 export const ForgotPasswordBody = zod.object({
