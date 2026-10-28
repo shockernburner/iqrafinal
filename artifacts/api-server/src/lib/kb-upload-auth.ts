@@ -2,11 +2,28 @@ import crypto from "node:crypto";
 import type { Request, Response, NextFunction } from "express";
 import { pool } from "@workspace/db";
 import { hashPassword, verifyPassword } from "./auth";
+import { logger } from "./logger";
 
 // Only these admins may add to the knowledge base, and each must also enter a
 // second, upload-only password every time they upload or start a Drive import.
 // Every other admin keeps full read access but cannot upload.
-export const KB_UPLOAD_ADMIN_EMAILS = new Set(["firdous.mahmood26@gmail.com", "reels.javed@gmail.com"]);
+// Set the KB_UPLOAD_ADMIN_EMAILS secret (comma-separated) to change the list
+// without a code change; it applies on the next server restart.
+const DEFAULT_KB_UPLOAD_ADMIN_EMAILS = ["firdous.mahmood26@gmail.com", "reels.javed@gmail.com"];
+
+export function parseKbUploadAdminEmails(raw: string | undefined): Set<string> {
+  const emails = (raw ?? "")
+    .split(/[,;\s]+/)
+    .map((email) => email.trim().toLowerCase())
+    .filter((email) => email.includes("@"));
+  return new Set(emails.length > 0 ? emails : DEFAULT_KB_UPLOAD_ADMIN_EMAILS);
+}
+
+export const KB_UPLOAD_ADMIN_EMAILS = parseKbUploadAdminEmails(process.env.KB_UPLOAD_ADMIN_EMAILS);
+logger.info(
+  { kbUploadAdmins: [...KB_UPLOAD_ADMIN_EMAILS], source: process.env.KB_UPLOAD_ADMIN_EMAILS?.trim() ? "secret" : "default" },
+  "Knowledge base uploaders",
+);
 
 export const KB_UPLOAD_TOKEN_HEADER = "x-kb-upload-token";
 export const KB_UPLOAD_MIN_PASSWORD_LENGTH = 12;
