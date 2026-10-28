@@ -155,6 +155,48 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /auth/config:
+    get:
+      operationId: getAuthConfig
+      tags: [auth]
+      summary: Public auth configuration (which sign-in providers are enabled)
+      responses:
+        "200":
+          description: Auth configuration
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthConfig"
+  /auth/google:
+    post:
+      operationId: googleSignIn
+      tags: [auth]
+      summary: Sign in or register with a Google ID token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GoogleSignInInput"
+      responses:
+        "200":
+          description: Signed in (account created on first sign-in)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "401":
+          description: Invalid Google credential
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "501":
+          description: Google sign-in is not configured
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /auth/forgot-password:
     post:
       operationId: forgotPassword
@@ -1132,6 +1174,20 @@ components:
           type: string
         name:
           type: string
+    AuthConfig:
+      type: object
+      required: [googleClientId]
+      properties:
+        googleClientId:
+          type: ["string", "null"]
+          description: Google OAuth web client ID, or null when Google sign-in is disabled.
+    GoogleSignInInput:
+      type: object
+      required: [credential]
+      properties:
+        credential:
+          type: string
+          description: The ID token (JWT) returned by Google Identity Services.
     ForgotPasswordInput:
       type: object
       required: [email]

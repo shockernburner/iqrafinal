@@ -1,13 +1,13 @@
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useLogin, getGetSessionQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useLocation, Link } from "wouter";
-import { useAuth } from "@/hooks/use-auth";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { PasswordInput } from "@/components/password-input";
+import { GoogleSignIn } from "@/components/google-sign-in";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import logoPng from "@/assets/logo.png";
@@ -72,9 +72,10 @@ export default function Login() {
         <Card className="border-border/50 shadow-lg shadow-primary/5">
           <CardHeader>
             <CardTitle className="font-serif text-2xl">Sign In</CardTitle>
-            <CardDescription>Enter your email below to access your account</CardDescription>
+            <CardDescription>Continue with Google, or sign in with your email and password</CardDescription>
           </CardHeader>
           <CardContent>
+            <GoogleSignIn mode="signin" />
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <FormField
@@ -97,7 +98,7 @@ export default function Login() {
                     <FormItem>
                       <FormLabel>Password</FormLabel>
                       <FormControl>
-                        <Input type="password" autoComplete="current-password" placeholder="••••••••" {...field} className="bg-background" />
+                        <PasswordInput autoComplete="current-password" placeholder="••••••••" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

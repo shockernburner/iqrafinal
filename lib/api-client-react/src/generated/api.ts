@@ -30,6 +30,7 @@ import type {
   AdminOverview,
   AdminTrainingList,
   AdminUserList,
+  AuthConfig,
   AuthUser,
   ChatJobStart,
   ChatJobStatus,
@@ -50,6 +51,7 @@ import type {
   DriveImportStatus,
   ErrorResponse,
   ForgotPasswordInput,
+  GoogleSignInInput,
   HealthStatus,
   LoginInput,
   OkResponse,
@@ -604,6 +606,153 @@ export const useRegister = <TError = ErrorType<ErrorResponse>,
         TContext
       > => {
       return useMutation(getRegisterMutationOptions(options));
+    }
+
+export const getGetAuthConfigUrl = () => {
+
+
+
+
+  return `/api/auth/config`
+}
+
+/**
+ * @summary Public auth configuration (which sign-in providers are enabled)
+ */
+export const getAuthConfig = async ( options?: RequestInit): Promise<AuthConfig> => {
+
+  return customFetch<AuthConfig>(getGetAuthConfigUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAuthConfigQueryKey = () => {
+    return [
+    `/api/auth/config`
+    ] as const;
+    }
+
+
+export const getGetAuthConfigQueryOptions = <TData = Awaited<ReturnType<typeof getAuthConfig>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAuthConfig>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAuthConfigQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAuthConfig>>> = ({ signal }) => getAuthConfig({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAuthConfig>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAuthConfigQueryResult = NonNullable<Awaited<ReturnType<typeof getAuthConfig>>>
+export type GetAuthConfigQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Public auth configuration (which sign-in providers are enabled)
+ */
+
+export function useGetAuthConfig<TData = Awaited<ReturnType<typeof getAuthConfig>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAuthConfig>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAuthConfigQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGoogleSignInUrl = () => {
+
+
+
+
+  return `/api/auth/google`
+}
+
+/**
+ * @summary Sign in or register with a Google ID token
+ */
+export const googleSignIn = async (googleSignInInput: GoogleSignInInput, options?: RequestInit): Promise<AuthUser> => {
+
+  return customFetch<AuthUser>(getGoogleSignInUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(googleSignInInput)
+  }
+);}
+
+
+
+
+export const getGoogleSignInMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof googleSignIn>>, TError,{data: BodyType<GoogleSignInInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof googleSignIn>>, TError,{data: BodyType<GoogleSignInInput>}, TContext> => {
+
+const mutationKey = ['googleSignIn'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof googleSignIn>>, {data: BodyType<GoogleSignInInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  googleSignIn(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type GoogleSignInMutationResult = NonNullable<Awaited<ReturnType<typeof googleSignIn>>>
+    export type GoogleSignInMutationBody = BodyType<GoogleSignInInput>
+    export type GoogleSignInMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Sign in or register with a Google ID token
+ */
+export const useGoogleSignIn = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof googleSignIn>>, TError,{data: BodyType<GoogleSignInInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof googleSignIn>>,
+        TError,
+        {data: BodyType<GoogleSignInInput>},
+        TContext
+      > => {
+      return useMutation(getGoogleSignInMutationOptions(options));
     }
 
 export const getForgotPasswordUrl = () => {
