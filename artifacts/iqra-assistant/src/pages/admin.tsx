@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { AppLayout } from "@/components/layout";
 import { 
   useGetAdminOverview, 
@@ -21,7 +21,7 @@ import {
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Database, FileText, Activity, BookOpen, Users, DollarSign, MessageCircle, Loader2, Plus, RefreshCw, Upload, MoreHorizontal, Lock } from "lucide-react";
+import { Database, FileText, Activity, BookOpen, Users, DollarSign, MessageCircle, Loader2, Plus, RefreshCw, Upload, Lock } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -30,9 +30,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import AdminContentEditor from "@/components/admin-content-editor";
 import AdminDonors from "@/components/admin-donors";
+import { AdminDocumentsTable, type DocumentAction } from "@/components/admin-documents-table";
 import AdminCorporateSponsors from "@/components/admin-corporate-sponsors";
 import { KbUploadGate } from "@/components/kb-upload-gate";
 import { countryLabel } from "@/lib/country";
@@ -57,6 +57,8 @@ function fmtLabel(value: string): string {
   const d = new Date(value + "T00:00:00");
   return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
 }
+
+const NO_DOCUMENTS: never[] = [];
 
 export default function AdminDashboard() {
   const { toast } = useToast();
@@ -137,6 +139,12 @@ export default function AdminDashboard() {
       }
     }
   });
+  // Stable reference so the memoised documents table doesn't re-render on every dashboard update.
+  const updateDocMutate = updateDoc.mutate;
+  const handleDocumentAction = useCallback(
+    (id: string, action: DocumentAction) => updateDocMutate({ id, data: { action } }),
+    [updateDocMutate],
+  );
 
   const startMaintenance = useStartAdminMaintenance({
     mutation: {
@@ -579,59 +587,7 @@ export default function AdminDashboard() {
                   {isLoadingDocs ? (
                     <div className="py-8 flex justify-center"><Loader2 className="animate-spin text-muted-foreground" /></div>
                   ) : (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Title</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Created</TableHead>
-                          <TableHead className="w-16"></TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {documentsData?.documents.map((doc) => (
-                          <TableRow key={doc.id}>
-                            <TableCell className="font-medium">{doc.title}</TableCell>
-                            <TableCell>
-                              <Badge variant={doc.status === 'active' ? 'default' : 'secondary'}>
-                                {doc.status}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-muted-foreground">{new Date(doc.createdAt).toLocaleDateString()}</TableCell>
-                            <TableCell>
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="w-4 h-4" /></Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  {doc.status !== 'active' && (
-                                    <DropdownMenuItem onClick={() => updateDoc.mutate({ id: doc.id, data: { action: 'activate' } })}>
-                                      Activate
-                                    </DropdownMenuItem>
-                                  )}
-                                  {doc.status === 'active' && (
-                                    <DropdownMenuItem onClick={() => updateDoc.mutate({ id: doc.id, data: { action: 'deactivate' } })}>
-                                      Deactivate
-                                    </DropdownMenuItem>
-                                  )}
-                                  <DropdownMenuItem 
-                                    className="text-destructive focus:bg-destructive focus:text-destructive-foreground"
-                                    onClick={() => updateDoc.mutate({ id: doc.id, data: { action: 'delete' } })}
-                                  >
-                                    Delete
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                        {documentsData?.documents.length === 0 && (
-                          <TableRow>
-                            <TableCell colSpan={4} className="text-center py-4 text-muted-foreground">No documents found.</TableCell>
-                          </TableRow>
-                        )}
-                      </TableBody>
-                    </Table>
+                    <AdminDocumentsTable documents={documentsData?.documents ?? NO_DOCUMENTS} onAction={handleDocumentAction} />
                   )}
                 </CardContent>
               </Card>

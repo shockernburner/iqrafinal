@@ -525,7 +525,7 @@ router.post("/documents/upload", requireKbUploadGrant, uploadBudgetGuard, withMu
   res.status(201).json(data);
 });
 
-router.patch("/documents/:id", async (req, res) => {
+router.post("/documents/:id", async (req, res) => {
   const params = UpdateAdminDocumentParams.parse(req.params);
   const body = UpdateAdminDocumentBody.parse(req.body);
 
