@@ -47,8 +47,17 @@ from = "/reset-password"
 to = "/reset-password/index.html"
 
 [[services.production.rewrites]]
+from = "/donors"
+to = "/donors/index.html"
+
+[[services.production.rewrites]]
+from = "/corporate-sponsors"
+to = "/corporate-sponsors/index.html"
+
+# Legacy URL from before donors and corporate sponsors were split; the client redirects to /donors.
+[[services.production.rewrites]]
 from = "/sponsors"
-to = "/sponsors/index.html"
+to = "/donors/index.html"
 
 [[services.production.rewrites]]
 from = "/*"

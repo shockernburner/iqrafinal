@@ -8,8 +8,9 @@ import {
   useGetAdminMaintenance,
   useListAdminDonations,
   useGetAdminGrowth,
-  useUploadAdminDocumentsBatch,
-  useStartAdminDriveImport,
+  uploadAdminDocumentsBatch,
+  startAdminDriveImport,
+  useGetKbUploadStatus,
   useGetAdminDriveImport,
   useCancelAdminDriveImport,
   useUpdateAdminDocument,
@@ -17,10 +18,10 @@ import {
   useAddAdminTraining,
   useUploadAdminTrainingDataset
 } from "@workspace/api-client-react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Database, FileText, Activity, BookOpen, Users, DollarSign, MessageCircle, Loader2, Plus, RefreshCw, Upload, MoreHorizontal } from "lucide-react";
+import { Database, FileText, Activity, BookOpen, Users, DollarSign, MessageCircle, Loader2, Plus, RefreshCw, Upload, MoreHorizontal, Lock } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import AdminContentEditor from "@/components/admin-content-editor";
+import AdminDonors from "@/components/admin-donors";
+import AdminCorporateSponsors from "@/components/admin-corporate-sponsors";
+import { KbUploadGate } from "@/components/kb-upload-gate";
 import { countryLabel } from "@/lib/country";
 import {
   ResponsiveContainer,
@@ -72,8 +76,29 @@ export default function AdminDashboard() {
   const { data: donationsData, isLoading: isLoadingDonations } = useListAdminDonations();
   const { data: growthData, isLoading: isLoadingGrowth } = useGetAdminGrowth();
 
-  const uploadDocs = useUploadAdminDocumentsBatch({
-    mutation: {
+  // Knowledge-base uploads: only designated admins, and each upload/import needs
+  // the second (upload) password, which yields a single-use grant token.
+  // @ts-ignore - generated hook option typing requires queryKey but it is supplied internally
+  const { data: kbStatus } = useGetKbUploadStatus({ query: { retry: false } });
+  const kbEligible = kbStatus?.eligible ?? false;
+  const [kbGateFor, setKbGateFor] = useState<"upload" | "drive" | null>(null);
+  const kbTokenRef = useRef<string | null>(null);
+  const kbHeaders = () => {
+    const token = kbTokenRef.current;
+    kbTokenRef.current = null; // single-use: the next action must re-enter the password
+    return token ? { "X-KB-Upload-Token": token } : undefined;
+  };
+  const onKbUnlocked = (token: string) => {
+    kbTokenRef.current = token;
+    const target = kbGateFor;
+    setKbGateFor(null);
+    if (target === "upload") setIsUploadOpen(true);
+    if (target === "drive") setIsDriveOpen(true);
+  };
+  const isKbGrantError = (err: any) => err?.status === 401 || err?.status === 403;
+
+  const uploadDocs = useMutation({
+    mutationFn: ({ data }: { data: { files: File[] } }) => uploadAdminDocumentsBatch(data, { headers: kbHeaders() }),
       onSuccess: (result) => {
         const failed = result.results.filter((r) => !r.ok);
         if (failed.length === 0) {
@@ -93,13 +118,15 @@ export default function AdminDashboard() {
         setIsUploadOpen(false);
         setFiles([]);
       },
-      onError: (err: any) =>
+      onError: (err: any) => {
         toast({
           title: "Upload failed",
           description: err?.data?.error ?? err?.error ?? err?.message ?? "Unexpected error",
           variant: "destructive",
-        }),
-    }
+        });
+        // The grant was used up or expired; close so the next attempt asks for the password again.
+        if (isKbGrantError(err)) setIsUploadOpen(false);
+      },
   });
 
   const updateDoc = useUpdateAdminDocument({
@@ -156,20 +183,21 @@ export default function AdminDashboard() {
   } as any);
   const driveJob = driveStatus?.job ?? null;
   const driveActive = driveJob?.status === "scanning" || driveJob?.status === "running";
-  const startDrive = useStartAdminDriveImport({
-    mutation: {
-      onSuccess: () => {
-        toast({ title: "Drive import started", description: "Files are downloaded and indexed one by one." });
-        setIsDriveOpen(false);
-        setDriveUrl("");
-        queryClient.invalidateQueries({ queryKey: ["/api/admin/documents/import-drive"] });
-      },
-      onError: (err: any) =>
-        toast({
-          title: "Could not start import",
-          description: err?.data?.error ?? err?.message ?? "Unexpected error",
-          variant: "destructive",
-        }),
+  const startDrive = useMutation({
+    mutationFn: ({ data }: { data: { url: string } }) => startAdminDriveImport(data, { headers: kbHeaders() }),
+    onSuccess: () => {
+      toast({ title: "Drive import started", description: "Files are downloaded and indexed one by one." });
+      setIsDriveOpen(false);
+      setDriveUrl("");
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/documents/import-drive"] });
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Could not start import",
+        description: err?.data?.error ?? err?.message ?? "Unexpected error",
+        variant: "destructive",
+      });
+      if (isKbGrantError(err)) setIsDriveOpen(false);
     },
   });
   const cancelDrive = useCancelAdminDriveImport({
@@ -305,13 +333,15 @@ export default function AdminDashboard() {
           ) : null}
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-7 max-w-4xl h-auto">
+            <TabsList className="flex flex-wrap justify-start w-full h-auto gap-1">
               <TabsTrigger value="growth">Growth</TabsTrigger>
               <TabsTrigger value="documents">Knowledge Base</TabsTrigger>
               <TabsTrigger value="training">Training</TabsTrigger>
               <TabsTrigger value="maintenance">Maintenance</TabsTrigger>
               <TabsTrigger value="users">Users</TabsTrigger>
-              <TabsTrigger value="donations">Sponsors</TabsTrigger>
+              <TabsTrigger value="donations">Donations</TabsTrigger>
+              <TabsTrigger value="donors">Donors</TabsTrigger>
+              <TabsTrigger value="corporate-sponsors">Corporate Sponsors</TabsTrigger>
               <TabsTrigger value="content">Landing Content</TabsTrigger>
             </TabsList>
 
@@ -423,13 +453,28 @@ export default function AdminDashboard() {
                     <CardTitle>Documents</CardTitle>
                     <CardDescription>Source texts that ground the AI's responses.</CardDescription>
                   </div>
+                  {kbEligible ? (
                   <div className="flex gap-2">
-                  <Dialog open={isDriveOpen} onOpenChange={setIsDriveOpen}>
-                    <DialogTrigger asChild>
-                      <Button size="sm" variant="outline" disabled={driveActive}>
-                        <RefreshCw className="w-4 h-4 mr-2" /> Import from Drive
-                      </Button>
-                    </DialogTrigger>
+                  <Button size="sm" variant="outline" disabled={driveActive} onClick={() => setKbGateFor("drive")}>
+                    <RefreshCw className="w-4 h-4 mr-2" /> Import from Drive
+                  </Button>
+                  <Button size="sm" onClick={() => setKbGateFor("upload")}>
+                    <Upload className="w-4 h-4 mr-2" /> Upload Document
+                  </Button>
+                  <KbUploadGate
+                    open={kbGateFor !== null}
+                    configured={kbStatus?.configured ?? false}
+                    actionLabel={kbGateFor === "drive" ? "import from Google Drive" : "upload documents"}
+                    onOpenChange={(open) => !open && setKbGateFor(null)}
+                    onUnlocked={onKbUnlocked}
+                  />
+                  <Dialog
+                    open={isDriveOpen}
+                    onOpenChange={(open) => {
+                      setIsDriveOpen(open);
+                      if (!open) kbTokenRef.current = null;
+                    }}
+                  >
                     <DialogContent>
                       <DialogHeader>
                         <DialogTitle>Import from Google Drive</DialogTitle>
@@ -447,7 +492,7 @@ export default function AdminDashboard() {
                         />
                       </div>
                       <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsDriveOpen(false)}>Cancel</Button>
+                        <Button variant="outline" onClick={() => { setIsDriveOpen(false); kbTokenRef.current = null; }}>Cancel</Button>
                         <Button
                           onClick={() => startDrive.mutate({ data: { url: driveUrl } })}
                           disabled={!driveUrl.trim() || startDrive.isPending}
@@ -458,10 +503,13 @@ export default function AdminDashboard() {
                       </DialogFooter>
                     </DialogContent>
                   </Dialog>
-                  <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
-                    <DialogTrigger asChild>
-                      <Button size="sm"><Upload className="w-4 h-4 mr-2" /> Upload Document</Button>
-                    </DialogTrigger>
+                  <Dialog
+                    open={isUploadOpen}
+                    onOpenChange={(open) => {
+                      setIsUploadOpen(open);
+                      if (!open) kbTokenRef.current = null;
+                    }}
+                  >
                     <DialogContent>
                       <DialogHeader>
                         <DialogTitle>Upload Knowledge Documents</DialogTitle>
@@ -484,7 +532,7 @@ export default function AdminDashboard() {
                         )}
                       </div>
                       <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsUploadOpen(false)}>Cancel</Button>
+                        <Button variant="outline" onClick={() => { setIsUploadOpen(false); kbTokenRef.current = null; }}>Cancel</Button>
                         <Button onClick={handleUpload} disabled={!files.length || overBatchLimit || uploadDocs.isPending}>
                           {uploadDocs.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                           Upload{files.length > 1 ? ` ${files.length} files` : ""}
@@ -493,6 +541,12 @@ export default function AdminDashboard() {
                     </DialogContent>
                   </Dialog>
                   </div>
+                  ) : (
+                    <p className="flex items-center gap-2 text-sm text-muted-foreground max-w-xs text-right">
+                      <Lock className="w-4 h-4 shrink-0" />
+                      Uploads are restricted to designated administrators.
+                    </p>
+                  )}
                 </CardHeader>
                 <CardContent>
                   {driveJob && (
@@ -687,8 +741,8 @@ export default function AdminDashboard() {
             <TabsContent value="donations" className="mt-6">
               <Card>
                 <CardHeader className="border-b pb-4 mb-4">
-                  <CardTitle>Sponsors & Donations</CardTitle>
-                  <CardDescription>Every contribution and the supporter behind it.</CardDescription>
+                  <CardTitle>Donations</CardTitle>
+                  <CardDescription>Every online (Stripe) contribution and the donor behind it.</CardDescription>
                 </CardHeader>
                 <CardContent>
                   {isLoadingDonations ? (
@@ -698,7 +752,7 @@ export default function AdminDashboard() {
                       <Table>
                         <TableHeader>
                           <TableRow>
-                            <TableHead>Sponsor</TableHead>
+                            <TableHead>Donor</TableHead>
                             <TableHead>Email</TableHead>
                             <TableHead>Country</TableHead>
                             <TableHead className="text-right">Amount</TableHead>
@@ -734,6 +788,14 @@ export default function AdminDashboard() {
                   )}
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            <TabsContent value="donors" className="mt-6">
+              <AdminDonors />
+            </TabsContent>
+
+            <TabsContent value="corporate-sponsors" className="mt-6">
+              <AdminCorporateSponsors />
             </TabsContent>
 
             <TabsContent value="maintenance" className="mt-6">

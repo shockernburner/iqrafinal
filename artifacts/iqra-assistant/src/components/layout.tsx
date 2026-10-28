@@ -1,7 +1,7 @@
 import { ReactNode, useEffect, useState } from "react";
 import { Link, useLocation, useSearch } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
-import { LogOut, LayoutDashboard, MessageSquare, Heart, Settings, Plus, Loader2, Menu, X, FileText, Shield, Mail } from "lucide-react";
+import { LogOut, LayoutDashboard, MessageSquare, Heart, Settings, Plus, Loader2, Menu, X, FileText, Shield, Mail, Building2, HandHeart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useListChats, useCreateChat } from "@workspace/api-client-react";
 import logoPng from "@/assets/logo.png";
@@ -128,6 +128,14 @@ export function AppLayout({ children }: { children: ReactNode }) {
           <Button variant="ghost" className="w-full justify-start text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground" onClick={() => navigate("/donate")}>
             <Heart className="w-4 h-4 mr-2" />
             Support IQRA
+          </Button>
+          <Button variant="ghost" className="w-full justify-start text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground" onClick={() => navigate("/donors")}>
+            <HandHeart className="w-4 h-4 mr-2" />
+            Our Donors
+          </Button>
+          <Button variant="ghost" className="w-full justify-start text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground" onClick={() => navigate("/corporate-sponsors")}>
+            <Building2 className="w-4 h-4 mr-2" />
+            Corporate Sponsors
           </Button>
           <Button variant="ghost" className="w-full justify-start text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground" onClick={() => navigate("/terms")}>
             <FileText className="w-4 h-4 mr-2" />

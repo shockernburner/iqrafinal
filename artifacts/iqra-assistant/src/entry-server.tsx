@@ -5,7 +5,8 @@ import { Router as WouterRouter } from "wouter";
 import Landing from "@/pages/landing";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
-import Sponsors from "@/pages/sponsors";
+import Donors from "@/pages/donors";
+import CorporateSponsors from "@/pages/corporate-sponsors";
 import Terms from "@/pages/terms";
 import Privacy from "@/pages/privacy";
 import ForgotPassword from "@/pages/forgot-password";
@@ -58,14 +59,24 @@ export const PRERENDER_ROUTES: PrerenderedRoute[] = [
     Component: Register,
   },
   {
-    path: "/sponsors",
-    outFile: "sponsors/index.html",
-    title: "Our Sponsors — IQRA Assistant",
+    path: "/donors",
+    outFile: "donors/index.html",
+    title: "Our Donors — IQRA Assistant",
     description:
-      "The generous supporters whose donations keep IQRA Assistant free and growing for every seeker of Islamic guidance.",
+      "The generous donors whose support keeps IQRA Assistant free and growing for every seeker of Islamic guidance.",
     robots: "index, follow",
-    canonicalPath: "/sponsors",
-    Component: Sponsors,
+    canonicalPath: "/donors",
+    Component: Donors,
+  },
+  {
+    path: "/corporate-sponsors",
+    outFile: "corporate-sponsors/index.html",
+    title: "Our Corporate Sponsors — IQRA Assistant",
+    description:
+      "The organisations whose sponsorship helps keep IQRA Assistant free for every seeker of Islamic guidance.",
+    robots: "index, follow",
+    canonicalPath: "/corporate-sponsors",
+    Component: CorporateSponsors,
   },
   {
     path: "/terms",

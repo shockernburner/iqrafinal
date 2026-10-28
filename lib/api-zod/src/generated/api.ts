@@ -711,14 +711,157 @@ export const RecordVisitResponse = zod.object({
 
 
 /**
- * @summary Public list of sponsors (no amounts, ranked high to low)
+ * @summary Public list of donors (no amounts), first-come first-listed
  */
-export const GetSponsorsResponse = zod.object({
-  "sponsors": zod.array(zod.object({
+export const GetDonorsResponse = zod.object({
+  "donors": zod.array(zod.object({
   "displayName": zod.string().nullable(),
   "country": zod.string().nullable(),
   "anonymous": zod.boolean()
 }))
+})
+
+
+/**
+ * @summary Public list of corporate sponsors, first-come first-listed
+ */
+export const GetCorporateSponsorsResponse = zod.object({
+  "sponsors": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "websiteUrl": zod.string().nullable(),
+  "logoUrl": zod.string()
+}))
+})
+
+
+/**
+ * @summary List donors added manually by admins
+ */
+export const ListAdminDonorsResponse = zod.object({
+  "donors": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "country": zod.string().nullable(),
+  "anonymous": zod.boolean(),
+  "donatedAt": zod.string().describe('Date (YYYY-MM-DD) used for first-come ordering.'),
+  "createdAt": zod.string()
+}))
+})
+
+
+/**
+ * @summary Add a donor manually (e.g. an offline donation)
+ */
+export const AddAdminDonorBody = zod.object({
+  "name": zod.string(),
+  "country": zod.string().nullish().describe('ISO 3166-1 alpha-2 country code.'),
+  "anonymous": zod.boolean().optional(),
+  "donatedAt": zod.string().nullish().describe('Date (YYYY-MM-DD) of the donation; defaults to today.')
+})
+
+export const AddAdminDonorResponse = zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "country": zod.string().nullable(),
+  "anonymous": zod.boolean(),
+  "donatedAt": zod.string().describe('Date (YYYY-MM-DD) used for first-come ordering.'),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Remove a manually added donor
+ */
+export const DeleteAdminDonorParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const DeleteAdminDonorResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+
+/**
+ * @summary List corporate sponsors
+ */
+export const ListAdminCorporateSponsorsResponse = zod.object({
+  "sponsors": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "websiteUrl": zod.string().nullable(),
+  "logoUrl": zod.string(),
+  "sponsoredSince": zod.string().describe('Date (YYYY-MM-DD) used for first-come ordering.'),
+  "createdAt": zod.string()
+}))
+})
+
+
+/**
+ * @summary Add a corporate sponsor with its logo
+ */
+export const AddAdminCorporateSponsorBody = zod.object({
+  "name": zod.string(),
+  "websiteUrl": zod.string().optional(),
+  "sponsoredSince": zod.string().optional().describe('Date (YYYY-MM-DD); defaults to today.'),
+  "logo": zod.instanceof(File).describe('PNG, JPEG, or WebP image, up to 1 MB.')
+})
+
+export const AddAdminCorporateSponsorResponse = zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "websiteUrl": zod.string().nullable(),
+  "logoUrl": zod.string(),
+  "sponsoredSince": zod.string().describe('Date (YYYY-MM-DD) used for first-come ordering.'),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Remove a corporate sponsor
+ */
+export const DeleteAdminCorporateSponsorParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const DeleteAdminCorporateSponsorResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+
+/**
+ * @summary Whether the current admin may upload to the knowledge base, and whether their upload password is set
+ */
+export const GetKbUploadStatusResponse = zod.object({
+  "eligible": zod.boolean().describe('Whether this admin is allowed to upload to the knowledge base.'),
+  "configured": zod.boolean().describe('Whether this admin has already set their upload password.')
+})
+
+
+/**
+ * @summary Set the knowledge-base upload password (first time only) and get an upload grant
+ */
+export const SetupKbUploadPasswordBody = zod.object({
+  "password": zod.string()
+})
+
+export const SetupKbUploadPasswordResponse = zod.object({
+  "token": zod.string(),
+  "expiresAt": zod.string()
+})
+
+
+/**
+ * The returned token must be sent as the `X-KB-Upload-Token` header on `/admin/documents/upload`, `/admin/documents/upload-batch`, or `POST /admin/documents/import-drive`. Each token works once and expires after 15 minutes.
+ * @summary Verify the knowledge-base upload password and get a single-use upload grant
+ */
+export const VerifyKbUploadPasswordBody = zod.object({
+  "password": zod.string()
+})
+
+export const VerifyKbUploadPasswordResponse = zod.object({
+  "token": zod.string(),
+  "expiresAt": zod.string()
 })
 
 

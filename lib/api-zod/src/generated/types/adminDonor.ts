@@ -6,10 +6,13 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface Sponsor {
-  /** @nullable */
-  displayName: string | null;
+export interface AdminDonor {
+  id: string;
+  name: string;
   /** @nullable */
   country: string | null;
   anonymous: boolean;
+  /** Date (YYYY-MM-DD) used for first-come ordering. */
+  donatedAt: string;
+  createdAt: string;
 }

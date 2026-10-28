@@ -11,8 +11,22 @@ import multer from "multer";
 import ExcelJS from "exceljs";
 import { pool } from "@workspace/db";
 import {
+  AddAdminCorporateSponsorResponse,
+  AddAdminDonorBody,
+  AddAdminDonorResponse,
   AddAdminTrainingBody,
   AddAdminTrainingResponse,
+  DeleteAdminCorporateSponsorParams,
+  DeleteAdminCorporateSponsorResponse,
+  DeleteAdminDonorParams,
+  DeleteAdminDonorResponse,
+  GetKbUploadStatusResponse,
+  ListAdminCorporateSponsorsResponse,
+  ListAdminDonorsResponse,
+  SetupKbUploadPasswordBody,
+  SetupKbUploadPasswordResponse,
+  VerifyKbUploadPasswordBody,
+  VerifyKbUploadPasswordResponse,
   GetAdminGrowthResponse,
   GetAdminMaintenanceResponse,
   GetAdminOverviewResponse,
@@ -37,6 +51,15 @@ import { getAdminMaintenanceStatus, startAdminMaintenance } from "../lib/admin-m
 import { storeKnowledgeUpload } from "../lib/knowledge-upload";
 import { startDriveImport, getDriveImportStatus, cancelDriveImport } from "../lib/drive-import";
 import { addTrainingRecord, bulkAddTrainingRecords, loadTrainingRecords } from "../lib/training-data";
+import {
+  hasKbUploadPassword,
+  isKbUploadEligible,
+  requireKbUploadGrant,
+  setupKbUploadPassword,
+  verifyKbUploadPassword,
+} from "../lib/kb-upload-auth";
+import { normalizeCountry } from "../lib/pricing";
+import { corporateSponsorLogoUrl, detectLogoMime, MAX_LOGO_BYTES } from "../lib/corporate-sponsors";
 
 const router: IRouter = Router();
 
@@ -45,6 +68,7 @@ const router: IRouter = Router();
 const MAX_UPLOAD_BYTES = Number(process.env.MAX_KNOWLEDGE_UPLOAD_BYTES ?? 50 * 1024 * 1024);
 const MAX_BATCH_FILES = 50;
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: MAX_UPLOAD_BYTES } });
+const logoUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: MAX_LOGO_BYTES, files: 1 } });
 
 /** Reject requests whose declared body size exceeds the budget BEFORE multer buffers anything. */
 function uploadBudgetGuard(req: Request, res: Response, next: NextFunction) {
@@ -380,7 +404,7 @@ router.get("/documents", async (_req, res) => {
   res.json(data);
 });
 
-router.post("/documents/upload-batch", uploadBudgetGuard, withMulterErrors(upload.array("files", MAX_BATCH_FILES)), async (req, res) => {
+router.post("/documents/upload-batch", requireKbUploadGrant, uploadBudgetGuard, withMulterErrors(upload.array("files", MAX_BATCH_FILES)), async (req, res) => {
   const files = (req.files ?? []) as Express.Multer.File[];
   if (!files.length) {
     res.status(400).json({ error: "At least one file is required." });
@@ -450,7 +474,7 @@ router.post("/documents/upload-batch", uploadBudgetGuard, withMulterErrors(uploa
   res.json(data);
 });
 
-router.post("/documents/import-drive", async (req, res) => {
+router.post("/documents/import-drive", requireKbUploadGrant, async (req, res) => {
   const url = typeof req.body?.url === "string" ? req.body.url.trim() : "";
   if (!url) {
     res.status(400).json({ error: "A Google Drive folder link is required." });
@@ -480,7 +504,7 @@ router.post("/documents/import-drive/cancel", async (_req, res) => {
   res.json(GetAdminDriveImportResponse.parse({ job: getDriveImportStatus() }));
 });
 
-router.post("/documents/upload", uploadBudgetGuard, withMulterErrors(upload.single("file")), async (req, res) => {
+router.post("/documents/upload", requireKbUploadGrant, uploadBudgetGuard, withMulterErrors(upload.single("file")), async (req, res) => {
   if (!req.file) {
     res.status(400).json({ error: "A file is required." });
     return;
@@ -619,6 +643,243 @@ router.post("/training/upload", upload.single("file"), async (req, res) => {
     total: rows.length,
   });
   res.json(data);
+});
+
+router.get("/kb-upload/status", async (req, res) => {
+  const eligible = isKbUploadEligible(req.user!.email);
+  const configured = eligible ? await hasKbUploadPassword(req.user!.id) : false;
+  res.json(GetKbUploadStatusResponse.parse({ eligible, configured }));
+});
+
+router.post("/kb-upload/setup", async (req, res) => {
+  if (!isKbUploadEligible(req.user!.email)) {
+    res.status(403).json({ error: "Knowledge base uploads are restricted to designated administrators." });
+    return;
+  }
+  const body = SetupKbUploadPasswordBody.parse(req.body);
+  const result = await setupKbUploadPassword(req.user!.id, body.password);
+  if (!result.ok) {
+    res.status(result.status).json({ error: result.error });
+    return;
+  }
+  res.json(SetupKbUploadPasswordResponse.parse({ token: result.token, expiresAt: result.expiresAt }));
+});
+
+router.post("/kb-upload/verify", async (req, res) => {
+  if (!isKbUploadEligible(req.user!.email)) {
+    res.status(403).json({ error: "Knowledge base uploads are restricted to designated administrators." });
+    return;
+  }
+  const body = VerifyKbUploadPasswordBody.parse(req.body);
+  const result = await verifyKbUploadPassword(req.user!.id, body.password);
+  if (!result.ok) {
+    res.status(result.status).json({ error: result.error });
+    return;
+  }
+  res.json(VerifyKbUploadPasswordResponse.parse({ token: result.token, expiresAt: result.expiresAt }));
+});
+
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+/** Accepts YYYY-MM-DD (not in the future); empty means "today". Returns undefined when invalid. */
+function parseOptionalDate(input: unknown): string | null | undefined {
+  if (input === null || input === undefined || input === "") return null;
+  if (typeof input !== "string" || !ISO_DATE.test(input)) return undefined;
+  const date = new Date(`${input}T00:00:00Z`);
+  if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== input) return undefined;
+  // One day of slack so admins ahead of UTC can pick their local "today".
+  if (date.getTime() > Date.now() + 24 * 60 * 60 * 1000) return undefined;
+  return input;
+}
+
+type ManualDonorRow = {
+  id: string;
+  name: string;
+  country: string | null;
+  anonymous: boolean;
+  donated_on: string;
+  created_at: Date;
+};
+
+function serializeDonor(row: ManualDonorRow) {
+  return {
+    id: row.id,
+    name: row.name,
+    country: row.country,
+    anonymous: row.anonymous,
+    donatedAt: row.donated_on,
+    createdAt: row.created_at.toISOString(),
+  };
+}
+
+const DONOR_COLUMNS = "id, name, country, anonymous, donated_on::text AS donated_on, created_at";
+
+router.get("/donors", async (_req, res) => {
+  const result = await pool.query<ManualDonorRow>(
+    `SELECT ${DONOR_COLUMNS} FROM manual_donors ORDER BY donated_on, created_at`,
+  );
+  res.json(ListAdminDonorsResponse.parse({ donors: result.rows.map(serializeDonor) }));
+});
+
+router.post("/donors", async (req, res) => {
+  const body = AddAdminDonorBody.parse(req.body);
+  const name = body.name.trim().slice(0, 120);
+  if (!name) {
+    res.status(400).json({ error: "Donor name is required." });
+    return;
+  }
+  const donatedOn = parseOptionalDate(body.donatedAt);
+  if (donatedOn === undefined) {
+    res.status(400).json({ error: "Donation date must be a valid date (YYYY-MM-DD), not in the future." });
+    return;
+  }
+  const result = await pool.query<ManualDonorRow>(
+    `INSERT INTO manual_donors (name, country, anonymous, donated_on, created_by)
+     VALUES ($1, $2, $3, COALESCE($4::date, CURRENT_DATE), $5)
+     RETURNING ${DONOR_COLUMNS}`,
+    [name, normalizeCountry(body.country), body.anonymous ?? false, donatedOn, req.user!.id],
+  );
+  const row = result.rows[0]!;
+  await pool.query(
+    `INSERT INTO audit_log (actor_user_id, action, entity_type, entity_id, metadata)
+     VALUES ($1, 'manual_donor_added', 'manual_donor', $2, $3::jsonb)`,
+    [req.user!.id, row.id, JSON.stringify({ name })],
+  );
+  res.json(AddAdminDonorResponse.parse(serializeDonor(row)));
+});
+
+router.delete("/donors/:id", async (req, res) => {
+  const params = DeleteAdminDonorParams.parse(req.params);
+  const deleted = await pool.query<{ name: string }>(
+    "DELETE FROM manual_donors WHERE id::text = $1 RETURNING name",
+    [params.id],
+  );
+  if (!deleted.rows[0]) {
+    res.status(404).json({ error: "Donor not found." });
+    return;
+  }
+  await pool.query(
+    `INSERT INTO audit_log (actor_user_id, action, entity_type, entity_id, metadata)
+     VALUES ($1, 'manual_donor_removed', 'manual_donor', $2, $3::jsonb)`,
+    [req.user!.id, params.id, JSON.stringify({ name: deleted.rows[0].name })],
+  );
+  res.json(DeleteAdminDonorResponse.parse({ ok: true }));
+});
+
+type CorporateSponsorRow = {
+  id: string;
+  name: string;
+  website_url: string | null;
+  sponsored_since: string;
+  created_at: Date;
+};
+
+const SPONSOR_COLUMNS = "id, name, website_url, sponsored_since::text AS sponsored_since, created_at";
+
+function serializeCorporateSponsor(row: CorporateSponsorRow) {
+  return {
+    id: row.id,
+    name: row.name,
+    websiteUrl: row.website_url,
+    logoUrl: corporateSponsorLogoUrl(row.id),
+    sponsoredSince: row.sponsored_since,
+    createdAt: row.created_at.toISOString(),
+  };
+}
+
+/** Optional website: blank → null; bare domains get https://; anything else invalid → undefined. */
+function normalizeWebsiteUrl(input: unknown): string | null | undefined {
+  if (typeof input !== "string" || !input.trim()) return null;
+  const raw = input.trim();
+  try {
+    const url = new URL(/^https?:\/\//i.test(raw) ? raw : `https://${raw}`);
+    if (url.protocol !== "https:" && url.protocol !== "http:") return undefined;
+    if (!url.hostname.includes(".")) return undefined;
+    return url.toString().slice(0, 500);
+  } catch {
+    return undefined;
+  }
+}
+
+router.get("/corporate-sponsors", async (_req, res) => {
+  const result = await pool.query<CorporateSponsorRow>(
+    `SELECT ${SPONSOR_COLUMNS} FROM corporate_sponsors ORDER BY sponsored_since, created_at`,
+  );
+  res.json(ListAdminCorporateSponsorsResponse.parse({ sponsors: result.rows.map(serializeCorporateSponsor) }));
+});
+
+const logoUploadWithErrors: RequestHandler = (req, res, next) => {
+  logoUpload.single("logo")(req, res, (err?: unknown) => {
+    if (err instanceof multer.MulterError) {
+      res.status(400).json({
+        error:
+          err.code === "LIMIT_FILE_SIZE"
+            ? `The logo must be ${Math.round(MAX_LOGO_BYTES / 1024 / 1024)} MB or smaller.`
+            : "Invalid upload request.",
+      });
+      return;
+    }
+    next(err);
+  });
+};
+
+router.post("/corporate-sponsors", logoUploadWithErrors, async (req, res) => {
+  const name = typeof req.body?.name === "string" ? req.body.name.trim().slice(0, 120) : "";
+  if (!name) {
+    res.status(400).json({ error: "Company name is required." });
+    return;
+  }
+  if (!req.file) {
+    res.status(400).json({ error: "A company logo is required." });
+    return;
+  }
+  const mime = detectLogoMime(req.file.buffer);
+  if (!mime) {
+    res.status(400).json({ error: "The logo must be a PNG, JPEG, or WebP image." });
+    return;
+  }
+  const websiteUrl = normalizeWebsiteUrl(req.body?.websiteUrl);
+  if (websiteUrl === undefined) {
+    res.status(400).json({ error: "Website must be a valid http(s) address." });
+    return;
+  }
+  const sponsoredSince = parseOptionalDate(req.body?.sponsoredSince);
+  if (sponsoredSince === undefined) {
+    res.status(400).json({ error: "Sponsorship date must be a valid date (YYYY-MM-DD), not in the future." });
+    return;
+  }
+
+  const result = await pool.query<CorporateSponsorRow>(
+    `INSERT INTO corporate_sponsors (name, website_url, logo, logo_mime, sponsored_since, created_by)
+     VALUES ($1, $2, $3, $4, COALESCE($5::date, CURRENT_DATE), $6)
+     RETURNING ${SPONSOR_COLUMNS}`,
+    [name, websiteUrl, req.file.buffer, mime, sponsoredSince, req.user!.id],
+  );
+  const row = result.rows[0]!;
+  await pool.query(
+    `INSERT INTO audit_log (actor_user_id, action, entity_type, entity_id, metadata)
+     VALUES ($1, 'corporate_sponsor_added', 'corporate_sponsor', $2, $3::jsonb)`,
+    [req.user!.id, row.id, JSON.stringify({ name })],
+  );
+  res.json(AddAdminCorporateSponsorResponse.parse(serializeCorporateSponsor(row)));
+});
+
+router.delete("/corporate-sponsors/:id", async (req, res) => {
+  const params = DeleteAdminCorporateSponsorParams.parse(req.params);
+  const deleted = await pool.query<{ name: string }>(
+    "DELETE FROM corporate_sponsors WHERE id::text = $1 RETURNING name",
+    [params.id],
+  );
+  if (!deleted.rows[0]) {
+    res.status(404).json({ error: "Sponsor not found." });
+    return;
+  }
+  await pool.query(
+    `INSERT INTO audit_log (actor_user_id, action, entity_type, entity_id, metadata)
+     VALUES ($1, 'corporate_sponsor_removed', 'corporate_sponsor', $2, $3::jsonb)`,
+    [req.user!.id, params.id, JSON.stringify({ name: deleted.rows[0].name })],
+  );
+  res.json(DeleteAdminCorporateSponsorResponse.parse({ ok: true }));
 });
 
 export default router;

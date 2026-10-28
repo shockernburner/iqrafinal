@@ -606,7 +606,7 @@ export interface SiteStats {
   registeredUsers: number;
 }
 
-export interface Sponsor {
+export interface Donor {
   /** @nullable */
   displayName: string | null;
   /** @nullable */
@@ -614,8 +614,90 @@ export interface Sponsor {
   anonymous: boolean;
 }
 
-export interface SponsorList {
-  sponsors: Sponsor[];
+export interface DonorList {
+  donors: Donor[];
+}
+
+export interface CorporateSponsor {
+  id: string;
+  name: string;
+  /** @nullable */
+  websiteUrl: string | null;
+  logoUrl: string;
+}
+
+export interface CorporateSponsorList {
+  sponsors: CorporateSponsor[];
+}
+
+export interface AdminDonor {
+  id: string;
+  name: string;
+  /** @nullable */
+  country: string | null;
+  anonymous: boolean;
+  /** Date (YYYY-MM-DD) used for first-come ordering. */
+  donatedAt: string;
+  createdAt: string;
+}
+
+export interface AdminDonorList {
+  donors: AdminDonor[];
+}
+
+export interface AdminDonorInput {
+  name: string;
+  /**
+     * ISO 3166-1 alpha-2 country code.
+     * @nullable
+     */
+  country?: string | null;
+  anonymous?: boolean;
+  /**
+     * Date (YYYY-MM-DD) of the donation; defaults to today.
+     * @nullable
+     */
+  donatedAt?: string | null;
+}
+
+export interface AdminCorporateSponsor {
+  id: string;
+  name: string;
+  /** @nullable */
+  websiteUrl: string | null;
+  logoUrl: string;
+  /** Date (YYYY-MM-DD) used for first-come ordering. */
+  sponsoredSince: string;
+  createdAt: string;
+}
+
+export interface AdminCorporateSponsorList {
+  sponsors: AdminCorporateSponsor[];
+}
+
+export interface AdminCorporateSponsorInput {
+  name: string;
+  websiteUrl?: string;
+  /** Date (YYYY-MM-DD); defaults to today. */
+  sponsoredSince?: string;
+  /** PNG, JPEG, or WebP image, up to 1 MB. */
+  logo: Blob;
+}
+
+export interface KbUploadStatus {
+  /** Whether this admin is allowed to upload to the knowledge base. */
+  eligible: boolean;
+  /** Whether this admin has already set their upload password. */
+  configured: boolean;
+}
+
+export interface KbUploadPasswordInput {
+  password: string;
+}
+
+export interface KbUploadGrant {
+  token: string;
+  expiresAt: string;
 }
 
 export interface VoiceUploadInput {

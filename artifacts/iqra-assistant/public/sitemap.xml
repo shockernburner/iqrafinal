@@ -6,6 +6,16 @@
     <priority>1.0</priority>
   </url>
   <url>
+    <loc>https://iqra.live/corporate-sponsors</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://iqra.live/donors</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
     <loc>https://iqra.live/terms</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>

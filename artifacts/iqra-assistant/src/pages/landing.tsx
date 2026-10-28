@@ -3,18 +3,25 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import logoPng from "@/assets/logo.png";
-import { BookOpen, Compass, ShieldCheck, Eye, Users, Heart } from "lucide-react";
+import { BookOpen, Compass, ShieldCheck, Eye, Users, Heart, Building2, Mail } from "lucide-react";
 import { useSeo } from "@/hooks/use-seo";
 import { HomeStructuredData } from "@/components/structured-data";
 import { useSiteContent } from "@/lib/site-content";
 import {
   useGetSiteStats,
-  useGetSponsors,
+  useGetDonors,
   recordVisit,
   getGetSiteStatsQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { countryLabel } from "@/lib/country";
+import { DonorList } from "@/components/donor-list";
+import { PublicFooter } from "@/components/public-footer";
+import {
+  CORPORATE_SPONSORSHIP_MAILTO,
+  CorporateSponsorsEmpty,
+  CorporateSponsorsMarquee,
+  useCorporateSponsors,
+} from "@/components/corporate-sponsors";
 
 const PILLAR_ICONS = [BookOpen, Compass, ShieldCheck];
 const VISIT_KEY = "iqra-visit-counted";
@@ -68,53 +75,72 @@ function StatsBar() {
   );
 }
 
-function SponsorsPreview() {
-  const { data } = useGetSponsors({
+const DONOR_PREVIEW_COUNT = 10;
+
+function CorporateSponsorsSection() {
+  const { sponsors, isLoading } = useCorporateSponsors();
+  if (isLoading) return null;
+
+  return (
+    <section className="max-w-5xl mx-auto px-6 pb-20" aria-labelledby="corporate-sponsors-heading">
+      <div className="text-center mb-8">
+        <div className="inline-flex items-center justify-center p-3 bg-primary/10 text-primary rounded-full mb-4">
+          <Building2 className="w-6 h-6" />
+        </div>
+        <h2 id="corporate-sponsors-heading" className="font-serif text-3xl font-bold text-foreground">
+          Our Corporate Sponsors
+        </h2>
+        <p className="mt-3 text-muted-foreground max-w-xl mx-auto">
+          Organisations helping us keep authentic, source-grounded guidance free for everyone.
+        </p>
+      </div>
+      {sponsors.length > 0 ? <CorporateSponsorsMarquee sponsors={sponsors} /> : <CorporateSponsorsEmpty />}
+      <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
+        {sponsors.length > 0 && (
+          <Link href="/corporate-sponsors">
+            <Button variant="outline" data-testid="link-view-all-corporate-sponsors">View all sponsors</Button>
+          </Link>
+        )}
+        <a href={CORPORATE_SPONSORSHIP_MAILTO}>
+          <Button variant={sponsors.length > 0 ? "ghost" : "default"} data-testid="link-corporate-contact">
+            <Mail className="w-4 h-4 mr-2" /> Contact for corporate sponsorship
+          </Button>
+        </a>
+      </div>
+    </section>
+  );
+}
+
+function DonorsPreview() {
+  const { data } = useGetDonors({
     // @ts-ignore - generated hook option typing requires queryKey but it is supplied internally
     query: { retry: false },
   });
-  const sponsors = (data?.sponsors ?? []).slice(0, 6);
+  const donors = data?.donors ?? [];
 
-  if (sponsors.length === 0) return null;
+  if (donors.length === 0) return null;
 
   return (
-    <section className="max-w-5xl mx-auto px-6 pb-24">
+    <section className="max-w-4xl mx-auto px-6 pb-24" aria-labelledby="donors-heading">
       <div className="text-center mb-8">
         <div className="inline-flex items-center justify-center p-3 bg-primary/10 text-primary rounded-full mb-4">
           <Heart className="w-6 h-6 fill-primary" />
         </div>
-        <h2 className="font-serif text-3xl font-bold text-foreground">Our Sponsors</h2>
+        <h2 id="donors-heading" className="font-serif text-3xl font-bold text-foreground">Our Donors</h2>
         <p className="mt-3 text-muted-foreground max-w-xl mx-auto">
           Generous supporters whose sadaqah jāriyah keeps IQRA free for every seeker.
         </p>
       </div>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" data-testid="list-sponsors-preview">
-        {sponsors.map((sponsor, index) => {
-          const name = sponsor.anonymous || !sponsor.displayName ? "Anonymous" : sponsor.displayName;
-          const country = countryLabel(sponsor.country);
-          return (
-            <Card key={index} className="border-border/50 shadow-sm">
-              <CardContent className="flex items-center gap-4 py-4">
-                <span className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 text-primary font-semibold flex items-center justify-center text-sm">
-                  {index + 1}
-                </span>
-                <div className="flex-1 min-w-0">
-                  <p className="font-serif font-semibold text-foreground truncate">{name}</p>
-                  {country && <p className="text-sm text-muted-foreground">{country}</p>}
-                </div>
-                <Heart className="w-5 h-5 text-primary/40 fill-primary/20 flex-shrink-0" />
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
-      <div className="mt-8 flex items-center justify-center gap-4">
-        <Link href="/sponsors">
-          <Button variant="outline" data-testid="link-view-all-sponsors">View all sponsors</Button>
+      <DonorList donors={donors.slice(0, DONOR_PREVIEW_COUNT)} testId="list-donors-preview" />
+      <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
+        <Link href="/donors">
+          <Button variant="outline" data-testid="link-view-all-donors">
+            {donors.length > DONOR_PREVIEW_COUNT ? `View all ${donors.length} donors` : "View all donors"}
+          </Button>
         </Link>
         <Link href="/donate">
-          <Button data-testid="link-sponsors-donate">
-            <Heart className="w-4 h-4 mr-2" /> Become a sponsor
+          <Button data-testid="link-donors-donate">
+            <Heart className="w-4 h-4 mr-2" /> Become a donor
           </Button>
         </Link>
       </div>
@@ -142,8 +168,8 @@ export default function Landing() {
           <span className="font-serif text-xl font-bold text-foreground">IQRA Assistant</span>
         </div>
         <nav className="flex items-center gap-3">
-          <Link href="/sponsors">
-            <Button variant="ghost" data-testid="link-nav-sponsors">Our Sponsors</Button>
+          <Link href="/donors">
+            <Button variant="ghost" data-testid="link-nav-donors">Our Donors</Button>
           </Link>
           <Link href="/login">
             <Button variant="ghost" data-testid="link-nav-login">Sign in</Button>
@@ -192,20 +218,11 @@ export default function Landing() {
           })}
         </section>
 
-        <SponsorsPreview />
+        <CorporateSponsorsSection />
+        <DonorsPreview />
       </main>
 
-      <footer className="border-t border-border/50 py-8">
-        <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground mb-3">
-          <Link href="/sponsors" className="hover:text-primary hover:underline">Our Sponsors</Link>
-          <Link href="/privacy" className="hover:text-primary hover:underline">Privacy Policy</Link>
-          <Link href="/terms" className="hover:text-primary hover:underline">Terms of Service</Link>
-          <a href="mailto:contact@iqra.live" className="hover:text-primary hover:underline">Contact</a>
-        </div>
-        <p className="text-center text-sm text-muted-foreground">
-          &copy; {new Date().getFullYear()} IQRA Assistant
-        </p>
-      </footer>
+      <PublicFooter />
     </div>
   );
 }

@@ -21,7 +21,7 @@ tags:
   - name: donate
     description: Donations via Stripe
   - name: content
-    description: Public site content, stats, and sponsors
+    description: Public site content, stats, donors, and corporate sponsors
   - name: voice
     description: Voice transcription
   - name: sources
@@ -1024,18 +1024,339 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SiteStats"
-  /sponsors:
+  /donors:
     get:
-      operationId: getSponsors
+      operationId: getDonors
       tags: [content]
-      summary: Public list of sponsors (no amounts, ranked high to low)
+      summary: Public list of donors (no amounts), first-come first-listed
       responses:
         "200":
-          description: Sponsors
+          description: Donors
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/SponsorList"
+                $ref: "#/components/schemas/DonorList"
+  /corporate-sponsors:
+    get:
+      operationId: getCorporateSponsors
+      tags: [content]
+      summary: Public list of corporate sponsors, first-come first-listed
+      responses:
+        "200":
+          description: Corporate sponsors
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CorporateSponsorList"
+  /admin/donors:
+    get:
+      operationId: listAdminDonors
+      tags: [admin]
+      summary: List donors added manually by admins
+      responses:
+        "200":
+          description: Manually added donors
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminDonorList"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Admin only
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      operationId: addAdminDonor
+      tags: [admin]
+      summary: Add a donor manually (e.g. an offline donation)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminDonorInput"
+      responses:
+        "200":
+          description: Donor added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminDonor"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Admin only
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /admin/donors/{id}:
+    delete:
+      operationId: deleteAdminDonor
+      tags: [admin]
+      summary: Remove a manually added donor
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Admin only
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /admin/corporate-sponsors:
+    get:
+      operationId: listAdminCorporateSponsors
+      tags: [admin]
+      summary: List corporate sponsors
+      responses:
+        "200":
+          description: Corporate sponsors
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminCorporateSponsorList"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Admin only
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      operationId: addAdminCorporateSponsor
+      tags: [admin]
+      summary: Add a corporate sponsor with its logo
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/AdminCorporateSponsorInput"
+      responses:
+        "200":
+          description: Sponsor added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminCorporateSponsor"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Admin only
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /admin/corporate-sponsors/{id}:
+    delete:
+      operationId: deleteAdminCorporateSponsor
+      tags: [admin]
+      summary: Remove a corporate sponsor
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Admin only
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /admin/kb-upload/status:
+    get:
+      operationId: getKbUploadStatus
+      tags: [admin]
+      summary: Whether the current admin may upload to the knowledge base, and whether their upload password is set
+      responses:
+        "200":
+          description: Status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/KbUploadStatus"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Admin only
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /admin/kb-upload/setup:
+    post:
+      operationId: setupKbUploadPassword
+      tags: [admin]
+      summary: Set the knowledge-base upload password (first time only) and get an upload grant
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/KbUploadPasswordInput"
+      responses:
+        "200":
+          description: Password set; single-use upload grant issued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/KbUploadGrant"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Admin only
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /admin/kb-upload/verify:
+    post:
+      operationId: verifyKbUploadPassword
+      tags: [admin]
+      summary: Verify the knowledge-base upload password and get a single-use upload grant
+      description: >
+        The returned token must be sent as the `X-KB-Upload-Token` header on
+        `/admin/documents/upload`, `/admin/documents/upload-batch`, or
+        `POST /admin/documents/import-drive`. Each token works once and expires
+        after 15 minutes.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/KbUploadPasswordInput"
+      responses:
+        "200":
+          description: Single-use upload grant issued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/KbUploadGrant"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Admin only
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "423":
+          description: Locked after too many failed attempts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /admin/content:
     put:
       operationId: putSiteContent
@@ -1913,7 +2234,7 @@ components:
           type: integer
         registeredUsers:
           type: integer
-    Sponsor:
+    Donor:
       type: object
       required: [displayName, country, anonymous]
       properties:
@@ -1923,14 +2244,137 @@ components:
           type: ["string", "null"]
         anonymous:
           type: boolean
-    SponsorList:
+    DonorList:
+      type: object
+      required: [donors]
+      properties:
+        donors:
+          type: array
+          items:
+            $ref: "#/components/schemas/Donor"
+    CorporateSponsor:
+      type: object
+      required: [id, name, websiteUrl, logoUrl]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        websiteUrl:
+          type: ["string", "null"]
+        logoUrl:
+          type: string
+    CorporateSponsorList:
       type: object
       required: [sponsors]
       properties:
         sponsors:
           type: array
           items:
-            $ref: "#/components/schemas/Sponsor"
+            $ref: "#/components/schemas/CorporateSponsor"
+    AdminDonor:
+      type: object
+      required: [id, name, country, anonymous, donatedAt, createdAt]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        country:
+          type: ["string", "null"]
+        anonymous:
+          type: boolean
+        donatedAt:
+          type: string
+          description: Date (YYYY-MM-DD) used for first-come ordering.
+        createdAt:
+          type: string
+    AdminDonorList:
+      type: object
+      required: [donors]
+      properties:
+        donors:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminDonor"
+    AdminDonorInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        country:
+          type: ["string", "null"]
+          description: ISO 3166-1 alpha-2 country code.
+        anonymous:
+          type: boolean
+        donatedAt:
+          type: ["string", "null"]
+          description: Date (YYYY-MM-DD) of the donation; defaults to today.
+    AdminCorporateSponsor:
+      type: object
+      required: [id, name, websiteUrl, logoUrl, sponsoredSince, createdAt]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        websiteUrl:
+          type: ["string", "null"]
+        logoUrl:
+          type: string
+        sponsoredSince:
+          type: string
+          description: Date (YYYY-MM-DD) used for first-come ordering.
+        createdAt:
+          type: string
+    AdminCorporateSponsorList:
+      type: object
+      required: [sponsors]
+      properties:
+        sponsors:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminCorporateSponsor"
+    AdminCorporateSponsorInput:
+      type: object
+      required: [name, logo]
+      properties:
+        name:
+          type: string
+        websiteUrl:
+          type: string
+        sponsoredSince:
+          type: string
+          description: Date (YYYY-MM-DD); defaults to today.
+        logo:
+          type: string
+          format: binary
+          description: PNG, JPEG, or WebP image, up to 1 MB.
+    KbUploadStatus:
+      type: object
+      required: [eligible, configured]
+      properties:
+        eligible:
+          type: boolean
+          description: Whether this admin is allowed to upload to the knowledge base.
+        configured:
+          type: boolean
+          description: Whether this admin has already set their upload password.
+    KbUploadPasswordInput:
+      type: object
+      required: [password]
+      properties:
+        password:
+          type: string
+    KbUploadGrant:
+      type: object
+      required: [token, expiresAt]
+      properties:
+        token:
+          type: string
+        expiresAt:
+          type: string
 
     VoiceUploadInput:
       type: object

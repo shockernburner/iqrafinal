@@ -1,11 +1,13 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type RequestHandler } from "express";
 import { pool } from "@workspace/db";
 import {
   GetSiteContentResponse,
   GetSiteStatsResponse,
   RecordVisitResponse,
-  GetSponsorsResponse,
+  GetDonorsResponse,
+  GetCorporateSponsorsResponse,
 } from "@workspace/api-zod";
+import { corporateSponsorLogoUrl } from "../lib/corporate-sponsors";
 
 const router: IRouter = Router();
 
@@ -59,12 +61,13 @@ router.post("/visit", async (_req, res) => {
   res.json(data);
 });
 
-router.get("/sponsors", async (_req, res) => {
-  // Aggregate per donor (summing all their donations) and rank high → low.
-  // Amounts are used only for ordering and never exposed in the response.
+// Stripe donors (one entry per donor, keyed by their first donation) plus donors
+// added manually by admins, listed first come, first listed. Amounts are never
+// exposed.
+const listDonors: RequestHandler = async (_req, res) => {
   const result = await pool.query<{ name: string | null; anonymous: boolean; country: string | null }>(
-    `WITH agg AS (
-       SELECT user_id, SUM(amount_cents) AS total
+    `WITH firsts AS (
+       SELECT user_id, MIN(created_at) AS first_at
        FROM donations
        GROUP BY user_id
      ),
@@ -72,22 +75,70 @@ router.get("/sponsors", async (_req, res) => {
        SELECT DISTINCT ON (user_id) user_id, anonymous, country
        FROM donations
        ORDER BY user_id, created_at DESC
+     ),
+     stripe_donors AS (
+       SELECT u.name AS name, l.anonymous AS anonymous, l.country AS country, f.first_at AS first_at, f.first_at AS tiebreak
+       FROM firsts f
+       JOIN latest l ON l.user_id IS NOT DISTINCT FROM f.user_id
+       LEFT JOIN users u ON u.id = f.user_id
+     ),
+     manual AS (
+       SELECT name, anonymous, country, donated_on::timestamptz AS first_at, created_at AS tiebreak
+       FROM manual_donors
      )
-     SELECT u.name AS name, l.anonymous AS anonymous, l.country AS country
-     FROM agg a
-     JOIN latest l ON l.user_id IS NOT DISTINCT FROM a.user_id
-     LEFT JOIN users u ON u.id = a.user_id
-     ORDER BY a.total DESC NULLS LAST`,
+     SELECT name, anonymous, country
+     FROM (SELECT * FROM stripe_donors UNION ALL SELECT * FROM manual) d
+     ORDER BY first_at ASC, tiebreak ASC`,
   );
 
-  const data = GetSponsorsResponse.parse({
-    sponsors: result.rows.map((row) => ({
+  const data = GetDonorsResponse.parse({
+    donors: result.rows.map((row) => ({
       displayName: row.anonymous ? null : row.name,
       country: row.country,
       anonymous: row.anonymous,
     })),
   });
   res.json(data);
+};
+
+router.get("/donors", listDonors);
+// Legacy path from before donors and corporate sponsors were split.
+router.get("/sponsors", listDonors);
+
+router.get("/corporate-sponsors", async (_req, res) => {
+  const result = await pool.query<{ id: string; name: string; website_url: string | null }>(
+    `SELECT id, name, website_url FROM corporate_sponsors ORDER BY sponsored_since, created_at`,
+  );
+  const data = GetCorporateSponsorsResponse.parse({
+    sponsors: result.rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      websiteUrl: row.website_url,
+      logoUrl: corporateSponsorLogoUrl(row.id),
+    })),
+  });
+  res.json(data);
+});
+
+router.get("/corporate-sponsors/:id/logo", async (req, res) => {
+  const result = await pool.query<{ logo: Buffer; logo_mime: string }>(
+    "SELECT logo, logo_mime FROM corporate_sponsors WHERE id::text = $1",
+    [req.params.id],
+  );
+  const row = result.rows[0];
+  if (!row) {
+    res.status(404).json({ error: "Logo not found." });
+    return;
+  }
+  // Sponsors are never edited in place (delete + re-add gives a new id), so a
+  // logo URL's bytes never change.
+  res.set({
+    "Content-Type": row.logo_mime,
+    "Cache-Control": "public, max-age=31536000, immutable",
+    "X-Content-Type-Options": "nosniff",
+    "Content-Security-Policy": "default-src 'none'; sandbox",
+  });
+  res.send(row.logo);
 });
 
 export default router;

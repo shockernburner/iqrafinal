@@ -20,9 +20,15 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  AdminCorporateSponsor,
+  AdminCorporateSponsorInput,
+  AdminCorporateSponsorList,
   AdminDocumentAction,
   AdminDocumentList,
   AdminDonationList,
+  AdminDonor,
+  AdminDonorInput,
+  AdminDonorList,
   AdminGrowth,
   AdminMaintenanceInput,
   AdminMaintenanceStartResult,
@@ -41,18 +47,23 @@ import type {
   ChatThreadInput,
   ChatThreadList,
   ChatTurnInput,
+  CorporateSponsorList,
   DocumentBatchUploadInput,
   DocumentBatchUploadResult,
   DocumentUploadInput,
   DocumentUploadResult,
   DonationCheckout,
   DonationInput,
+  DonorList,
   DriveImportStartInput,
   DriveImportStatus,
   ErrorResponse,
   ForgotPasswordInput,
   GoogleSignInInput,
   HealthStatus,
+  KbUploadGrant,
+  KbUploadPasswordInput,
+  KbUploadStatus,
   LoginInput,
   OkResponse,
   ReadinessStatus,
@@ -61,7 +72,6 @@ import type {
   Session,
   SiteContent,
   SiteStats,
-  SponsorList,
   TrainingDatasetUploadInput,
   TrainingDatasetUploadResult,
   TrainingRecordInput,
@@ -2966,20 +2976,20 @@ export const useRecordVisit = <TError = ErrorType<unknown>,
       return useMutation(getRecordVisitMutationOptions(options));
     }
 
-export const getGetSponsorsUrl = () => {
+export const getGetDonorsUrl = () => {
 
 
 
 
-  return `/api/sponsors`
+  return `/api/donors`
 }
 
 /**
- * @summary Public list of sponsors (no amounts, ranked high to low)
+ * @summary Public list of donors (no amounts), first-come first-listed
  */
-export const getSponsors = async ( options?: RequestInit): Promise<SponsorList> => {
+export const getDonors = async ( options?: RequestInit): Promise<DonorList> => {
 
-  return customFetch<SponsorList>(getGetSponsorsUrl(),
+  return customFetch<DonorList>(getGetDonorsUrl(),
   {
     ...options,
     method: 'GET'
@@ -2992,45 +3002,45 @@ export const getSponsors = async ( options?: RequestInit): Promise<SponsorList> 
 
 
 
-export const getGetSponsorsQueryKey = () => {
+export const getGetDonorsQueryKey = () => {
     return [
-    `/api/sponsors`
+    `/api/donors`
     ] as const;
     }
 
 
-export const getGetSponsorsQueryOptions = <TData = Awaited<ReturnType<typeof getSponsors>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSponsors>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetDonorsQueryOptions = <TData = Awaited<ReturnType<typeof getDonors>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDonors>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetSponsorsQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getGetDonorsQueryKey();
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSponsors>>> = ({ signal }) => getSponsors({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getDonors>>> = ({ signal }) => getDonors({ signal, ...requestOptions });
 
 
 
 
 
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSponsors>>, TError, TData> & { queryKey: QueryKey }
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getDonors>>, TError, TData> & { queryKey: QueryKey }
 }
 
-export type GetSponsorsQueryResult = NonNullable<Awaited<ReturnType<typeof getSponsors>>>
-export type GetSponsorsQueryError = ErrorType<unknown>
+export type GetDonorsQueryResult = NonNullable<Awaited<ReturnType<typeof getDonors>>>
+export type GetDonorsQueryError = ErrorType<unknown>
 
 
 /**
- * @summary Public list of sponsors (no amounts, ranked high to low)
+ * @summary Public list of donors (no amounts), first-come first-listed
  */
 
-export function useGetSponsors<TData = Awaited<ReturnType<typeof getSponsors>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSponsors>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export function useGetDonors<TData = Awaited<ReturnType<typeof getDonors>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDonors>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getGetSponsorsQueryOptions(options)
+  const queryOptions = getGetDonorsQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -3042,6 +3052,744 @@ export function useGetSponsors<TData = Awaited<ReturnType<typeof getSponsors>>, 
 
 
 
+
+export const getGetCorporateSponsorsUrl = () => {
+
+
+
+
+  return `/api/corporate-sponsors`
+}
+
+/**
+ * @summary Public list of corporate sponsors, first-come first-listed
+ */
+export const getCorporateSponsors = async ( options?: RequestInit): Promise<CorporateSponsorList> => {
+
+  return customFetch<CorporateSponsorList>(getGetCorporateSponsorsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetCorporateSponsorsQueryKey = () => {
+    return [
+    `/api/corporate-sponsors`
+    ] as const;
+    }
+
+
+export const getGetCorporateSponsorsQueryOptions = <TData = Awaited<ReturnType<typeof getCorporateSponsors>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCorporateSponsors>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCorporateSponsorsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCorporateSponsors>>> = ({ signal }) => getCorporateSponsors({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCorporateSponsors>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetCorporateSponsorsQueryResult = NonNullable<Awaited<ReturnType<typeof getCorporateSponsors>>>
+export type GetCorporateSponsorsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Public list of corporate sponsors, first-come first-listed
+ */
+
+export function useGetCorporateSponsors<TData = Awaited<ReturnType<typeof getCorporateSponsors>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCorporateSponsors>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetCorporateSponsorsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListAdminDonorsUrl = () => {
+
+
+
+
+  return `/api/admin/donors`
+}
+
+/**
+ * @summary List donors added manually by admins
+ */
+export const listAdminDonors = async ( options?: RequestInit): Promise<AdminDonorList> => {
+
+  return customFetch<AdminDonorList>(getListAdminDonorsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAdminDonorsQueryKey = () => {
+    return [
+    `/api/admin/donors`
+    ] as const;
+    }
+
+
+export const getListAdminDonorsQueryOptions = <TData = Awaited<ReturnType<typeof listAdminDonors>>, TError = ErrorType<ErrorResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminDonors>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAdminDonorsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAdminDonors>>> = ({ signal }) => listAdminDonors({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAdminDonors>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAdminDonorsQueryResult = NonNullable<Awaited<ReturnType<typeof listAdminDonors>>>
+export type ListAdminDonorsQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary List donors added manually by admins
+ */
+
+export function useListAdminDonors<TData = Awaited<ReturnType<typeof listAdminDonors>>, TError = ErrorType<ErrorResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminDonors>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAdminDonorsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getAddAdminDonorUrl = () => {
+
+
+
+
+  return `/api/admin/donors`
+}
+
+/**
+ * @summary Add a donor manually (e.g. an offline donation)
+ */
+export const addAdminDonor = async (adminDonorInput: AdminDonorInput, options?: RequestInit): Promise<AdminDonor> => {
+
+  return customFetch<AdminDonor>(getAddAdminDonorUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(adminDonorInput)
+  }
+);}
+
+
+
+
+export const getAddAdminDonorMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addAdminDonor>>, TError,{data: BodyType<AdminDonorInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof addAdminDonor>>, TError,{data: BodyType<AdminDonorInput>}, TContext> => {
+
+const mutationKey = ['addAdminDonor'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof addAdminDonor>>, {data: BodyType<AdminDonorInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  addAdminDonor(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AddAdminDonorMutationResult = NonNullable<Awaited<ReturnType<typeof addAdminDonor>>>
+    export type AddAdminDonorMutationBody = BodyType<AdminDonorInput>
+    export type AddAdminDonorMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Add a donor manually (e.g. an offline donation)
+ */
+export const useAddAdminDonor = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addAdminDonor>>, TError,{data: BodyType<AdminDonorInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof addAdminDonor>>,
+        TError,
+        {data: BodyType<AdminDonorInput>},
+        TContext
+      > => {
+      return useMutation(getAddAdminDonorMutationOptions(options));
+    }
+
+export const getDeleteAdminDonorUrl = (id: string,) => {
+
+
+
+
+  return `/api/admin/donors/${id}`
+}
+
+/**
+ * @summary Remove a manually added donor
+ */
+export const deleteAdminDonor = async (id: string, options?: RequestInit): Promise<OkResponse> => {
+
+  return customFetch<OkResponse>(getDeleteAdminDonorUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteAdminDonorMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAdminDonor>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteAdminDonor>>, TError,{id: string}, TContext> => {
+
+const mutationKey = ['deleteAdminDonor'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteAdminDonor>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteAdminDonor(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteAdminDonorMutationResult = NonNullable<Awaited<ReturnType<typeof deleteAdminDonor>>>
+
+    export type DeleteAdminDonorMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Remove a manually added donor
+ */
+export const useDeleteAdminDonor = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAdminDonor>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteAdminDonor>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+      return useMutation(getDeleteAdminDonorMutationOptions(options));
+    }
+
+export const getListAdminCorporateSponsorsUrl = () => {
+
+
+
+
+  return `/api/admin/corporate-sponsors`
+}
+
+/**
+ * @summary List corporate sponsors
+ */
+export const listAdminCorporateSponsors = async ( options?: RequestInit): Promise<AdminCorporateSponsorList> => {
+
+  return customFetch<AdminCorporateSponsorList>(getListAdminCorporateSponsorsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAdminCorporateSponsorsQueryKey = () => {
+    return [
+    `/api/admin/corporate-sponsors`
+    ] as const;
+    }
+
+
+export const getListAdminCorporateSponsorsQueryOptions = <TData = Awaited<ReturnType<typeof listAdminCorporateSponsors>>, TError = ErrorType<ErrorResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminCorporateSponsors>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAdminCorporateSponsorsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAdminCorporateSponsors>>> = ({ signal }) => listAdminCorporateSponsors({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAdminCorporateSponsors>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAdminCorporateSponsorsQueryResult = NonNullable<Awaited<ReturnType<typeof listAdminCorporateSponsors>>>
+export type ListAdminCorporateSponsorsQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary List corporate sponsors
+ */
+
+export function useListAdminCorporateSponsors<TData = Awaited<ReturnType<typeof listAdminCorporateSponsors>>, TError = ErrorType<ErrorResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminCorporateSponsors>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAdminCorporateSponsorsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getAddAdminCorporateSponsorUrl = () => {
+
+
+
+
+  return `/api/admin/corporate-sponsors`
+}
+
+/**
+ * @summary Add a corporate sponsor with its logo
+ */
+export const addAdminCorporateSponsor = async (adminCorporateSponsorInput: AdminCorporateSponsorInput, options?: RequestInit): Promise<AdminCorporateSponsor> => {
+    const formData = new FormData();
+formData.append(`name`, adminCorporateSponsorInput.name);
+if(adminCorporateSponsorInput.websiteUrl !== undefined) {
+ formData.append(`websiteUrl`, adminCorporateSponsorInput.websiteUrl);
+ }
+if(adminCorporateSponsorInput.sponsoredSince !== undefined) {
+ formData.append(`sponsoredSince`, adminCorporateSponsorInput.sponsoredSince);
+ }
+formData.append(`logo`, adminCorporateSponsorInput.logo);
+
+  return customFetch<AdminCorporateSponsor>(getAddAdminCorporateSponsorUrl(),
+  {
+    ...options,
+    method: 'POST'
+    ,
+    body: formData
+  }
+);}
+
+
+
+
+export const getAddAdminCorporateSponsorMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addAdminCorporateSponsor>>, TError,{data: BodyType<AdminCorporateSponsorInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof addAdminCorporateSponsor>>, TError,{data: BodyType<AdminCorporateSponsorInput>}, TContext> => {
+
+const mutationKey = ['addAdminCorporateSponsor'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof addAdminCorporateSponsor>>, {data: BodyType<AdminCorporateSponsorInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  addAdminCorporateSponsor(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AddAdminCorporateSponsorMutationResult = NonNullable<Awaited<ReturnType<typeof addAdminCorporateSponsor>>>
+    export type AddAdminCorporateSponsorMutationBody = BodyType<AdminCorporateSponsorInput>
+    export type AddAdminCorporateSponsorMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Add a corporate sponsor with its logo
+ */
+export const useAddAdminCorporateSponsor = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addAdminCorporateSponsor>>, TError,{data: BodyType<AdminCorporateSponsorInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof addAdminCorporateSponsor>>,
+        TError,
+        {data: BodyType<AdminCorporateSponsorInput>},
+        TContext
+      > => {
+      return useMutation(getAddAdminCorporateSponsorMutationOptions(options));
+    }
+
+export const getDeleteAdminCorporateSponsorUrl = (id: string,) => {
+
+
+
+
+  return `/api/admin/corporate-sponsors/${id}`
+}
+
+/**
+ * @summary Remove a corporate sponsor
+ */
+export const deleteAdminCorporateSponsor = async (id: string, options?: RequestInit): Promise<OkResponse> => {
+
+  return customFetch<OkResponse>(getDeleteAdminCorporateSponsorUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteAdminCorporateSponsorMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAdminCorporateSponsor>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteAdminCorporateSponsor>>, TError,{id: string}, TContext> => {
+
+const mutationKey = ['deleteAdminCorporateSponsor'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteAdminCorporateSponsor>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteAdminCorporateSponsor(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteAdminCorporateSponsorMutationResult = NonNullable<Awaited<ReturnType<typeof deleteAdminCorporateSponsor>>>
+
+    export type DeleteAdminCorporateSponsorMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Remove a corporate sponsor
+ */
+export const useDeleteAdminCorporateSponsor = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAdminCorporateSponsor>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteAdminCorporateSponsor>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+      return useMutation(getDeleteAdminCorporateSponsorMutationOptions(options));
+    }
+
+export const getGetKbUploadStatusUrl = () => {
+
+
+
+
+  return `/api/admin/kb-upload/status`
+}
+
+/**
+ * @summary Whether the current admin may upload to the knowledge base, and whether their upload password is set
+ */
+export const getKbUploadStatus = async ( options?: RequestInit): Promise<KbUploadStatus> => {
+
+  return customFetch<KbUploadStatus>(getGetKbUploadStatusUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetKbUploadStatusQueryKey = () => {
+    return [
+    `/api/admin/kb-upload/status`
+    ] as const;
+    }
+
+
+export const getGetKbUploadStatusQueryOptions = <TData = Awaited<ReturnType<typeof getKbUploadStatus>>, TError = ErrorType<ErrorResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getKbUploadStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetKbUploadStatusQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getKbUploadStatus>>> = ({ signal }) => getKbUploadStatus({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getKbUploadStatus>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetKbUploadStatusQueryResult = NonNullable<Awaited<ReturnType<typeof getKbUploadStatus>>>
+export type GetKbUploadStatusQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary Whether the current admin may upload to the knowledge base, and whether their upload password is set
+ */
+
+export function useGetKbUploadStatus<TData = Awaited<ReturnType<typeof getKbUploadStatus>>, TError = ErrorType<ErrorResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getKbUploadStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetKbUploadStatusQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getSetupKbUploadPasswordUrl = () => {
+
+
+
+
+  return `/api/admin/kb-upload/setup`
+}
+
+/**
+ * @summary Set the knowledge-base upload password (first time only) and get an upload grant
+ */
+export const setupKbUploadPassword = async (kbUploadPasswordInput: KbUploadPasswordInput, options?: RequestInit): Promise<KbUploadGrant> => {
+
+  return customFetch<KbUploadGrant>(getSetupKbUploadPasswordUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(kbUploadPasswordInput)
+  }
+);}
+
+
+
+
+export const getSetupKbUploadPasswordMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setupKbUploadPassword>>, TError,{data: BodyType<KbUploadPasswordInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof setupKbUploadPassword>>, TError,{data: BodyType<KbUploadPasswordInput>}, TContext> => {
+
+const mutationKey = ['setupKbUploadPassword'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setupKbUploadPassword>>, {data: BodyType<KbUploadPasswordInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  setupKbUploadPassword(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SetupKbUploadPasswordMutationResult = NonNullable<Awaited<ReturnType<typeof setupKbUploadPassword>>>
+    export type SetupKbUploadPasswordMutationBody = BodyType<KbUploadPasswordInput>
+    export type SetupKbUploadPasswordMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Set the knowledge-base upload password (first time only) and get an upload grant
+ */
+export const useSetupKbUploadPassword = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setupKbUploadPassword>>, TError,{data: BodyType<KbUploadPasswordInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof setupKbUploadPassword>>,
+        TError,
+        {data: BodyType<KbUploadPasswordInput>},
+        TContext
+      > => {
+      return useMutation(getSetupKbUploadPasswordMutationOptions(options));
+    }
+
+export const getVerifyKbUploadPasswordUrl = () => {
+
+
+
+
+  return `/api/admin/kb-upload/verify`
+}
+
+/**
+ * The returned token must be sent as the `X-KB-Upload-Token` header on `/admin/documents/upload`, `/admin/documents/upload-batch`, or `POST /admin/documents/import-drive`. Each token works once and expires after 15 minutes.
+ * @summary Verify the knowledge-base upload password and get a single-use upload grant
+ */
+export const verifyKbUploadPassword = async (kbUploadPasswordInput: KbUploadPasswordInput, options?: RequestInit): Promise<KbUploadGrant> => {
+
+  return customFetch<KbUploadGrant>(getVerifyKbUploadPasswordUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(kbUploadPasswordInput)
+  }
+);}
+
+
+
+
+export const getVerifyKbUploadPasswordMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof verifyKbUploadPassword>>, TError,{data: BodyType<KbUploadPasswordInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof verifyKbUploadPassword>>, TError,{data: BodyType<KbUploadPasswordInput>}, TContext> => {
+
+const mutationKey = ['verifyKbUploadPassword'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof verifyKbUploadPassword>>, {data: BodyType<KbUploadPasswordInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  verifyKbUploadPassword(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type VerifyKbUploadPasswordMutationResult = NonNullable<Awaited<ReturnType<typeof verifyKbUploadPassword>>>
+    export type VerifyKbUploadPasswordMutationBody = BodyType<KbUploadPasswordInput>
+    export type VerifyKbUploadPasswordMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Verify the knowledge-base upload password and get a single-use upload grant
+ */
+export const useVerifyKbUploadPassword = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof verifyKbUploadPassword>>, TError,{data: BodyType<KbUploadPasswordInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof verifyKbUploadPassword>>,
+        TError,
+        {data: BodyType<KbUploadPasswordInput>},
+        TContext
+      > => {
+      return useMutation(getVerifyKbUploadPasswordMutationOptions(options));
+    }
 
 export const getPutSiteContentUrl = () => {
 
