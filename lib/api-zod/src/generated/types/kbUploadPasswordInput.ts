@@ -5,8 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
-import type { Sponsor } from './sponsor';
 
-export interface SponsorList {
-  sponsors: Sponsor[];
+export interface KbUploadPasswordInput {
+  password: string;
 }

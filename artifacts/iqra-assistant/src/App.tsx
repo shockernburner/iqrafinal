@@ -13,7 +13,8 @@ import ThankYou from "@/pages/thank-you";
 import AdminDashboard from "@/pages/admin";
 import Terms from "@/pages/terms";
 import Privacy from "@/pages/privacy";
-import Sponsors from "@/pages/sponsors";
+import Donors from "@/pages/donors";
+import CorporateSponsors from "@/pages/corporate-sponsors";
 import ForgotPassword from "@/pages/forgot-password";
 import ResetPassword from "@/pages/reset-password";
 import LegalConsent from "@/components/legal-consent";
@@ -84,7 +85,9 @@ function Router() {
       <Route path="/register" component={Register} />
       <Route path="/terms" component={Terms} />
       <Route path="/privacy" component={Privacy} />
-      <Route path="/sponsors" component={Sponsors} />
+      <Route path="/donors" component={Donors} />
+      <Route path="/corporate-sponsors" component={CorporateSponsors} />
+      <Route path="/sponsors">{() => <Redirect to="/donors" replace />}</Route>
       <Route path="/forgot-password" component={ForgotPassword} />
       <Route path="/reset-password" component={ResetPassword} />
       

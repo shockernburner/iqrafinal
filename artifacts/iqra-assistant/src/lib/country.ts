@@ -36,3 +36,30 @@ export function countryLabel(code: string | null | undefined): string {
   if (flag && name) return `${flag} ${name}`;
   return name || flag || "";
 }
+
+// Codes the browser knows a region name for but that aren't real countries.
+const NON_COUNTRY_CODES = new Set(["EU", "EZ", "UN", "QO", "XA", "XB", "XK", "ZZ"]);
+let cachedOptions: Array<{ code: string; label: string }> | null = null;
+
+/** All ISO 3166-1 alpha-2 countries the browser can name, sorted by name. */
+export function countryOptions(): Array<{ code: string; label: string }> {
+  if (cachedOptions) return cachedOptions;
+  let names: Intl.DisplayNames | null = null;
+  try {
+    names = new Intl.DisplayNames(["en"], { type: "region", fallback: "none" });
+  } catch {
+    return [];
+  }
+  const options: Array<{ code: string; label: string }> = [];
+  for (let a = 65; a <= 90; a++) {
+    for (let b = 65; b <= 90; b++) {
+      const code = String.fromCharCode(a, b);
+      if (NON_COUNTRY_CODES.has(code)) continue;
+      const name = names.of(code);
+      if (name && name !== code) options.push({ code, label: `${countryFlag(code)} ${name}` });
+    }
+  }
+  options.sort((x, y) => x.label.replace(/^\S+\s/, "").localeCompare(y.label.replace(/^\S+\s/, "")));
+  cachedOptions = options;
+  return options;
+}

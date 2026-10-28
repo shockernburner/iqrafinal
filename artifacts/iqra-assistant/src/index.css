@@ -148,3 +148,33 @@
     @apply font-serif;
   }
 }
+
+/* Corporate sponsors marquee: two identical copies of the row slide left by
+   exactly one copy's width (-50%), so the loop is seamless. */
+@keyframes iqra-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.iqra-marquee {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
+  mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
+}
+
+.iqra-marquee-track {
+  animation: iqra-marquee var(--iqra-marquee-duration, 40s) linear infinite;
+}
+
+.iqra-marquee:hover .iqra-marquee-track,
+.iqra-marquee:focus-within .iqra-marquee-track {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .iqra-marquee {
+    overflow-x: auto;
+  }
+  .iqra-marquee-track {
+    animation: none;
+  }
+}
