@@ -12,8 +12,7 @@ import {
   type ChatResponse,
   type ChatThreadDetail,
 } from "@workspace/api-client-react";
-import { Send, Loader2, Copy, Check, Share2, Heart, Building2 } from "lucide-react";
-import { CORPORATE_SPONSORSHIP_MAILTO } from "@/components/corporate-sponsors";
+import { Send, Loader2, Copy, Check, Share2, Heart } from "lucide-react";
 import { useInfiniteQuery, useQueryClient, type InfiniteData } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -457,9 +456,6 @@ export default function Chat() {
             <Link href="/donate" className="inline-flex items-center gap-1 font-medium text-primary hover:underline" data-testid="link-chat-donate">
               <Heart className="w-3 h-3" /> Donate / Support us
             </Link>
-            <a href={CORPORATE_SPONSORSHIP_MAILTO} className="inline-flex items-center gap-1 font-medium text-primary hover:underline" data-testid="link-chat-corporate">
-              <Building2 className="w-3 h-3" /> Contact for Corporate Sponsorship
-            </a>
           </div>
         </div>
         
