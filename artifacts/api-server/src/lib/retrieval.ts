@@ -21,30 +21,32 @@ const STOPWORDS = new Set([
 // The search_vector column uses the 'simple' text search config (no stemming,
 // no stopword removal), so a websearch/plainto query over a full natural-language
 // question — which ANDs every token, stopwords included — almost never matches.
-// Instead, extract meaningful keywords and OR them, ranking by overlap.
-function buildKeywordTsquery(query: string): string | null {
+// Instead we extract the meaningful keywords ourselves. Combining marks (\p{M}:
+// Bengali vowel signs and virama, Arabic harakat) count as part of a word, as they
+// do in Postgres's tokenizer; without them every Bengali word fell apart.
+export function extractKeywords(query: string): string[] {
   const tokens = query
     .toLowerCase()
-    .split(/[^\p{L}\p{N}''-]+/u)
+    .split(/[^\p{L}\p{M}\p{N}''-]+/u)
     .map((t) => t.replace(/^[-']+|[-']+$/g, ""))
-    .filter((t) => t.length >= 3 && !STOPWORDS.has(t));
-  const unique = Array.from(new Set(tokens)).slice(0, 12);
-  if (unique.length === 0) return null;
-  return unique.map((t) => t.replace(/[':&|!()<>]/g, "")).filter(Boolean).join(" | ");
+    .filter((t) => t.length >= 3 && !STOPWORDS.has(t))
+    .map((t) => t.replace(/[':&|!()<>]/g, ""))
+    .filter(Boolean);
+  return Array.from(new Set(tokens)).slice(0, 12);
 }
 
-export async function searchKnowledgeChunks(query: string, limit = 6): Promise<RetrievedChunk[]> {
-  const tsquery = buildKeywordTsquery(query);
-  if (!tsquery) return [];
+type ChunkRow = {
+  id: string;
+  title: string;
+  section_heading: string | null;
+  page_number: number;
+  text: string;
+  rank: number;
+};
 
-  const result = await pool.query<{
-    title: string;
-    section_heading: string | null;
-    page_number: number;
-    text: string;
-    rank: number;
-  }>(
-    `SELECT d.title, c.section_heading, c.page_number, c.text,
+async function runSearch(tsquery: string, limit: number): Promise<ChunkRow[]> {
+  const result = await pool.query<ChunkRow>(
+    `SELECT c.id, d.title, c.section_heading, c.page_number, c.text,
        ts_rank(c.search_vector, to_tsquery('simple', $1)) AS rank
      FROM document_chunks c
      JOIN documents d ON d.id = c.document_id
@@ -55,8 +57,32 @@ export async function searchKnowledgeChunks(query: string, limit = 6): Promise<R
      LIMIT $2`,
     [tsquery, limit],
   );
+  return result.rows;
+}
 
-  return result.rows.map((row) => ({
+/**
+ * Two-step search. Chunks containing *every* keyword come first: that match set
+ * is small, so it is fast even on a very large knowledge base, and those chunks
+ * are usually the most relevant. Only when that finds fewer than `limit` chunks
+ * do we fall back to chunks containing *any* keyword (the slower, broader
+ * search) to fill the remaining places. Measured on 290k chunks: a typical
+ * question dropped from ~540 ms to ~2 ms (docs/knowledge-upload-60gb-plan.md).
+ */
+export async function searchKnowledgeChunks(query: string, limit = 6): Promise<RetrievedChunk[]> {
+  const keywords = extractKeywords(query);
+  if (keywords.length === 0) return [];
+
+  const rows = keywords.length > 1 ? await runSearch(keywords.join(" & "), limit) : [];
+  if (rows.length < limit) {
+    const seen = new Set(rows.map((row) => row.id));
+    // Ask for a few extra so chunks already found don't leave places empty.
+    for (const row of await runSearch(keywords.join(" | "), limit + rows.length)) {
+      if (rows.length >= limit) break;
+      if (!seen.has(row.id)) rows.push(row);
+    }
+  }
+
+  return rows.map((row) => ({
     documentTitle: row.title,
     sectionHeading: row.section_heading,
     pageNumber: row.page_number,
