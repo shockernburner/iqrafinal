@@ -1,4 +1,5 @@
-import { anthropic } from "@workspace/integrations-anthropic-ai";
+import { Anthropic, anthropic } from "@workspace/integrations-anthropic-ai";
+import { logger } from "./logger";
 import type { RetrievedChunk } from "./retrieval";
 import type { TrainingRecord } from "./training-data";
 
@@ -114,6 +115,50 @@ function asConfidence(value: unknown): "high" | "medium" | "low" {
   return value === "high" || value === "medium" || value === "low" ? value : "medium";
 }
 
+// Claude Sonnet 5.5 first; Claude Sonnet 5 (same price) as the fallback for when
+// Replit AI Integrations doesn't offer 5.5 yet, or 5.5 declines a request.
+// Low effort suits chat: the model skips extended thinking on most questions.
+export const CHAT_MODELS = ["claude-sonnet-5-5", "claude-sonnet-5"] as const;
+const UNAVAILABLE_RETRY_MS = 60 * 60 * 1000;
+const unavailableUntil = new Map<string, number>();
+
+type CreateParams = Omit<Anthropic.MessageCreateParamsNonStreaming, "model" | "output_config">;
+
+function isModelUnavailable(error: unknown) {
+  if (!(error instanceof Anthropic.APIError)) return false;
+  return error.status === 404 || (error.status === 400 && /model/i.test(error.message));
+}
+
+/** Calls the first available chat model, falling back down CHAT_MODELS on "unknown model" errors and refusals. */
+export async function createChatMessage(params: CreateParams, signal?: AbortSignal): Promise<Anthropic.Message> {
+  let refused: Anthropic.Message | null = null;
+  const available = CHAT_MODELS.filter((model) => (unavailableUntil.get(model) ?? 0) <= Date.now());
+  const order = available.length ? available : [...CHAT_MODELS];
+  for (const [index, model] of order.entries()) {
+    const isLast = index === order.length - 1;
+    let message: Anthropic.Message;
+    try {
+      message = await anthropic.messages.create({ ...params, model, output_config: { effort: "low" } }, { signal });
+    } catch (error) {
+      if (!isLast && isModelUnavailable(error)) {
+        // Remember for an hour so every request doesn't pay for a failed call.
+        unavailableUntil.set(model, Date.now() + UNAVAILABLE_RETRY_MS);
+        logger.warn({ model, err: (error as Error).message }, "Claude model unavailable; falling back");
+        continue;
+      }
+      throw error;
+    }
+    if (message.stop_reason === "refusal" && !isLast) {
+      logger.warn({ model }, "Claude declined the request; retrying on the fallback model");
+      refused = message;
+      continue;
+    }
+    return message;
+  }
+  if (refused) return refused;
+  throw new Error("No Claude model is available.");
+}
+
 /**
  * Translate a fixed English message into the same language as the user's prompt.
  * Used for deterministic responses (e.g. the comparative-religion refusal) so they
@@ -127,17 +172,16 @@ export async function localizeMessage(
   signal?: AbortSignal,
 ): Promise<string> {
   try {
-    const message = await anthropic.messages.create(
+    const message = await createChatMessage(
       {
-        model: "claude-sonnet-4-6",
-        max_tokens: 1024,
+        max_tokens: 2048,
         system:
           "You are a translator. Translate the MESSAGE into the exact same natural language as the USER TEXT, matching its script and register. If the USER TEXT is already in English, return the MESSAGE unchanged. Do not answer or comment on the USER TEXT. Output ONLY the translated message — no quotes, no labels, no commentary.",
         messages: [
           { role: "user", content: `USER TEXT:\n${prompt}\n\n---\n\nMESSAGE:\n${englishMessage}` },
         ],
       },
-      { signal },
+      signal,
     );
     const text = message.content
       .map((block) => (block.type === "text" ? block.text : ""))
@@ -155,15 +199,16 @@ export async function generateLlmChatResponse(
   examples: TrainingRecord[],
   signal?: AbortSignal,
 ): Promise<LlmChatResult> {
-  const message = await anthropic.messages.create(
+  const message = await createChatMessage(
     {
-      model: "claude-sonnet-4-6",
       max_tokens: 8192,
       system: SYSTEM_PROMPT,
       messages: [{ role: "user", content: buildUserContent(prompt, chunks, examples) }],
     },
-    { signal },
+    signal,
   );
+
+  if (message.stop_reason === "refusal") throw new Error("Claude declined to answer this question.");
 
   const text = message.content
     .map((block) => (block.type === "text" ? block.text : ""))
