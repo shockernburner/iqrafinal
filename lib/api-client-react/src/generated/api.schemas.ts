@@ -594,11 +594,39 @@ export interface DonationPopup {
   laterLabel: string;
 }
 
+export type PitchVideoProvider = typeof PitchVideoProvider[keyof typeof PitchVideoProvider];
+
+
+export const PitchVideoProvider = {
+  youtube: 'youtube',
+  vimeo: 'vimeo',
+  file: 'file',
+} as const;
+
+export interface PitchVideo {
+  /** The link as the admin entered it. */
+  url: string;
+  provider: PitchVideoProvider;
+  /** Player URL (YouTube/Vimeo iframe src) or the direct video file URL. */
+  embedUrl: string;
+  /** @nullable */
+  title: string | null;
+  /** @nullable */
+  thumbnailUrl: string | null;
+  updatedAt: string;
+}
+
 export interface SiteContent {
   hero?: SiteHero;
   pillars?: SitePillar[];
   visionHero?: SiteHero;
   popup?: DonationPopup;
+  /** Founder's pitch video shown on the landing page; absent when none is set. */
+  pitchVideo?: PitchVideo;
+}
+
+export interface PitchVideoInput {
+  url: string;
 }
 
 export interface SiteStats {

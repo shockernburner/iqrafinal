@@ -6,7 +6,8 @@ import logoPng from "@/assets/logo.png";
 import { BookOpen, Compass, ShieldCheck, Eye, Users, Heart, Building2, Mail } from "lucide-react";
 import { useSeo } from "@/hooks/use-seo";
 import { HomeStructuredData } from "@/components/structured-data";
-import { useSiteContent } from "@/lib/site-content";
+import { usePitchVideo, useSiteContent } from "@/lib/site-content";
+import { PitchVideoPlayer, safeVideoSrc } from "@/components/pitch-video";
 import {
   useGetSiteStats,
   useGetDonors,
@@ -76,6 +77,24 @@ function StatsBar() {
 }
 
 const DONOR_PREVIEW_COUNT = 10;
+
+// Shown only once an admin has published a verified video link.
+function FounderPitchSection() {
+  const video = usePitchVideo();
+  if (!video || !safeVideoSrc(video)) return null;
+
+  return (
+    <section className="max-w-4xl mx-auto px-6 pb-20" aria-labelledby="founder-pitch-heading" data-testid="section-founder-pitch">
+      <div className="text-center mb-6">
+        <p className="text-sm font-medium uppercase tracking-wider text-primary">A message from our founder</p>
+        <h2 id="founder-pitch-heading" className="mt-2 font-serif text-2xl sm:text-3xl font-bold text-foreground">
+          Why we are building IQRA
+        </h2>
+      </div>
+      <PitchVideoPlayer video={video} />
+    </section>
+  );
+}
 
 function CorporateSponsorsSection() {
   const { sponsors, isLoading } = useCorporateSponsors();
@@ -202,6 +221,8 @@ export default function Landing() {
           </div>
           <StatsBar />
         </section>
+
+        <FounderPitchSection />
 
         <section className="max-w-5xl mx-auto px-6 pb-24 grid gap-6 sm:grid-cols-3">
           {pillars.map((pillar, index) => {

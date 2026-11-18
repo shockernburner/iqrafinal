@@ -66,6 +66,8 @@ import type {
   KbUploadStatus,
   LoginInput,
   OkResponse,
+  PitchVideo,
+  PitchVideoInput,
   ReadinessStatus,
   RegisterInput,
   ResetPasswordInput,
@@ -3789,6 +3791,147 @@ export const useVerifyKbUploadPassword = <TError = ErrorType<ErrorResponse>,
         TContext
       > => {
       return useMutation(getVerifyKbUploadPasswordMutationOptions(options));
+    }
+
+export const getSetPitchVideoUrl = () => {
+
+
+
+
+  return `/api/admin/pitch-video`
+}
+
+/**
+ * YouTube and Vimeo links are verified through their oEmbed endpoints (public or unlisted, embeddable videos only). Direct video files (https .mp4/.webm/.mov/.m4v/.ogv) are accepted by URL shape; the admin UI checks they play in the browser before calling this.
+ * @summary Check a video link and, if it plays, publish it as the founder's pitch on the landing page
+ */
+export const setPitchVideo = async (pitchVideoInput: PitchVideoInput, options?: RequestInit): Promise<PitchVideo> => {
+
+  return customFetch<PitchVideo>(getSetPitchVideoUrl(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(pitchVideoInput)
+  }
+);}
+
+
+
+
+export const getSetPitchVideoMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setPitchVideo>>, TError,{data: BodyType<PitchVideoInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof setPitchVideo>>, TError,{data: BodyType<PitchVideoInput>}, TContext> => {
+
+const mutationKey = ['setPitchVideo'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setPitchVideo>>, {data: BodyType<PitchVideoInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  setPitchVideo(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SetPitchVideoMutationResult = NonNullable<Awaited<ReturnType<typeof setPitchVideo>>>
+    export type SetPitchVideoMutationBody = BodyType<PitchVideoInput>
+    export type SetPitchVideoMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Check a video link and, if it plays, publish it as the founder's pitch on the landing page
+ */
+export const useSetPitchVideo = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setPitchVideo>>, TError,{data: BodyType<PitchVideoInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof setPitchVideo>>,
+        TError,
+        {data: BodyType<PitchVideoInput>},
+        TContext
+      > => {
+      return useMutation(getSetPitchVideoMutationOptions(options));
+    }
+
+export const getDeletePitchVideoUrl = () => {
+
+
+
+
+  return `/api/admin/pitch-video`
+}
+
+/**
+ * @summary Remove the founder's pitch video from the landing page
+ */
+export const deletePitchVideo = async ( options?: RequestInit): Promise<OkResponse> => {
+
+  return customFetch<OkResponse>(getDeletePitchVideoUrl(),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeletePitchVideoMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deletePitchVideo>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deletePitchVideo>>, TError,void, TContext> => {
+
+const mutationKey = ['deletePitchVideo'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deletePitchVideo>>, void> = () => {
+
+
+          return  deletePitchVideo(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeletePitchVideoMutationResult = NonNullable<Awaited<ReturnType<typeof deletePitchVideo>>>
+
+    export type DeletePitchVideoMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Remove the founder's pitch video from the landing page
+ */
+export const useDeletePitchVideo = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deletePitchVideo>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deletePitchVideo>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getDeletePitchVideoMutationOptions(options));
     }
 
 export const getPutSiteContentUrl = () => {

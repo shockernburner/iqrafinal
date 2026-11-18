@@ -1,4 +1,4 @@
-import type { SiteContent, SiteHero, SitePillar, DonationPopup } from "@workspace/api-client-react";
+import type { SiteContent, SiteHero, SitePillar, DonationPopup, PitchVideo } from "@workspace/api-client-react";
 import { useGetSiteContent } from "@workspace/api-client-react";
 
 // Default copy mirrors the original hardcoded landing / vision text so the
@@ -38,14 +38,18 @@ export const DEFAULT_POPUP: DonationPopup = {
   laterLabel: "OK, I'll do it later",
 };
 
-export const DEFAULT_CONTENT: Required<SiteContent> = {
+// Editable copy blocks. The pitch video is managed separately (see usePitchVideo)
+// because it is only ever set through the verified /admin/pitch-video endpoint.
+export type EditableSiteContent = Required<Omit<SiteContent, "pitchVideo">>;
+
+export const DEFAULT_CONTENT: EditableSiteContent = {
   hero: DEFAULT_HERO,
   pillars: DEFAULT_PILLARS,
   visionHero: DEFAULT_VISION_HERO,
   popup: DEFAULT_POPUP,
 };
 
-export function mergeContent(content: SiteContent | undefined | null): Required<SiteContent> {
+export function mergeContent(content: SiteContent | undefined | null): EditableSiteContent {
   return {
     hero: content?.hero ?? DEFAULT_HERO,
     pillars: content?.pillars && content.pillars.length > 0 ? content.pillars : DEFAULT_PILLARS,
@@ -54,10 +58,19 @@ export function mergeContent(content: SiteContent | undefined | null): Required<
   };
 }
 
-export function useSiteContent(): Required<SiteContent> {
+export function useSiteContent(): EditableSiteContent {
   const { data } = useGetSiteContent({
     // @ts-ignore - generated hook option typing requires queryKey but it is supplied internally
     query: { retry: false, staleTime: 60_000 },
   });
   return mergeContent(data);
+}
+
+/** The founder's pitch video, or null when none is published. */
+export function usePitchVideo(): PitchVideo | null {
+  const { data } = useGetSiteContent({
+    // @ts-ignore - generated hook option typing requires queryKey but it is supplied internally
+    query: { retry: false, staleTime: 60_000 },
+  });
+  return data?.pitchVideo ?? null;
 }

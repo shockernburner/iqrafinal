@@ -1357,6 +1357,75 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /admin/pitch-video:
+    put:
+      operationId: setPitchVideo
+      tags: [admin]
+      summary: Check a video link and, if it plays, publish it as the founder's pitch on the landing page
+      description: >
+        YouTube and Vimeo links are verified through their oEmbed endpoints (public or unlisted,
+        embeddable videos only). Direct video files (https .mp4/.webm/.mov/.m4v/.ogv) are accepted
+        by URL shape; the admin UI checks they play in the browser before calling this.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PitchVideoInput"
+      responses:
+        "200":
+          description: Video verified and published
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PitchVideo"
+        "400":
+          description: Unsupported link or video not available
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Admin only
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "502":
+          description: Could not reach the video provider
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deletePitchVideo
+      tags: [admin]
+      summary: Remove the founder's pitch video from the landing page
+      responses:
+        "200":
+          description: Removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Admin only
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /admin/content:
     put:
       operationId: putSiteContent
@@ -2226,6 +2295,34 @@ components:
           $ref: "#/components/schemas/SiteHero"
         popup:
           $ref: "#/components/schemas/DonationPopup"
+        pitchVideo:
+          description: Founder's pitch video shown on the landing page; absent when none is set.
+          $ref: "#/components/schemas/PitchVideo"
+    PitchVideo:
+      type: object
+      required: [url, provider, embedUrl, title, thumbnailUrl, updatedAt]
+      properties:
+        url:
+          type: string
+          description: The link as the admin entered it.
+        provider:
+          type: string
+          enum: [youtube, vimeo, file]
+        embedUrl:
+          type: string
+          description: Player URL (YouTube/Vimeo iframe src) or the direct video file URL.
+        title:
+          type: ["string", "null"]
+        thumbnailUrl:
+          type: ["string", "null"]
+        updatedAt:
+          type: string
+    PitchVideoInput:
+      type: object
+      required: [url]
+      properties:
+        url:
+          type: string
     SiteStats:
       type: object
       required: [pageVisits, registeredUsers]

@@ -20,6 +20,9 @@ import {
   DeleteAdminCorporateSponsorResponse,
   DeleteAdminDonorParams,
   DeleteAdminDonorResponse,
+  DeletePitchVideoResponse,
+  SetPitchVideoBody,
+  SetPitchVideoResponse,
   GetKbUploadStatusResponse,
   ListAdminCorporateSponsorsResponse,
   ListAdminDonorsResponse,
@@ -59,6 +62,7 @@ import {
   verifyKbUploadPassword,
 } from "../lib/kb-upload-auth";
 import { normalizeCountry } from "../lib/pricing";
+import { PitchVideoError, resolvePitchVideo } from "../lib/pitch-video";
 import { corporateSponsorLogoUrl, detectLogoMime, MAX_LOGO_BYTES } from "../lib/corporate-sponsors";
 
 const router: IRouter = Router();
@@ -561,6 +565,45 @@ router.post("/documents/:id", async (req, res) => {
   res.json(data);
 });
 
+router.put("/pitch-video", async (req, res) => {
+  const body = SetPitchVideoBody.parse(req.body);
+  let video;
+  try {
+    video = await resolvePitchVideo(body.url);
+  } catch (error) {
+    if (error instanceof PitchVideoError) {
+      res.status(error.status).json({ error: error.message });
+      return;
+    }
+    throw error;
+  }
+
+  const value = { ...video, updatedAt: new Date().toISOString() };
+  await pool.query(
+    `INSERT INTO site_content (key, value, updated_by, updated_at)
+     VALUES ('pitchVideo', $1::jsonb, $2, now())
+     ON CONFLICT (key) DO UPDATE
+       SET value = EXCLUDED.value, updated_by = EXCLUDED.updated_by, updated_at = now()`,
+    [JSON.stringify(value), req.user!.id],
+  );
+  await pool.query(
+    `INSERT INTO audit_log (actor_user_id, action, entity_type, entity_id, metadata)
+     VALUES ($1, 'pitch_video_set', 'site_content', 'pitchVideo', $2::jsonb)`,
+    [req.user!.id, JSON.stringify({ url: video.url, provider: video.provider })],
+  );
+  res.json(SetPitchVideoResponse.parse(value));
+});
+
+router.delete("/pitch-video", async (req, res) => {
+  await pool.query("DELETE FROM site_content WHERE key = 'pitchVideo'");
+  await pool.query(
+    `INSERT INTO audit_log (actor_user_id, action, entity_type, entity_id, metadata)
+     VALUES ($1, 'pitch_video_removed', 'site_content', 'pitchVideo', '{}'::jsonb)`,
+    [req.user!.id],
+  );
+  res.json(DeletePitchVideoResponse.parse({ ok: true }));
+});
+
 router.get("/maintenance", (_req, res) => {
   const data = GetAdminMaintenanceResponse.parse(getAdminMaintenanceStatus());
   res.json(data);
@@ -575,7 +618,8 @@ router.post("/maintenance", (req, res) => {
 
 router.put("/content", async (req, res) => {
   const body = PutSiteContentBody.parse(req.body);
-  const entries = Object.entries(body).filter(([, value]) => value !== undefined);
+  // The pitch video is only set through /pitch-video, which verifies the link first.
+  const entries = Object.entries(body).filter(([key, value]) => value !== undefined && key !== "pitchVideo");
 
   for (const [key, value] of entries) {
     await pool.query(

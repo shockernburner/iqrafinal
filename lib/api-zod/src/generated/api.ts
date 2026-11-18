@@ -688,7 +688,15 @@ export const GetSiteContentResponse = zod.object({
   "body": zod.string(),
   "supportLabel": zod.string(),
   "laterLabel": zod.string()
-}).optional()
+}).optional(),
+  "pitchVideo": zod.object({
+  "url": zod.string().describe('The link as the admin entered it.'),
+  "provider": zod.enum(['youtube', 'vimeo', 'file']),
+  "embedUrl": zod.string().describe('Player URL (YouTube\/Vimeo iframe src) or the direct video file URL.'),
+  "title": zod.string().nullable(),
+  "thumbnailUrl": zod.string().nullable(),
+  "updatedAt": zod.string()
+}).optional().describe('Founder\'s pitch video shown on the landing page; absent when none is set.')
 })
 
 
@@ -866,6 +874,32 @@ export const VerifyKbUploadPasswordResponse = zod.object({
 
 
 /**
+ * YouTube and Vimeo links are verified through their oEmbed endpoints (public or unlisted, embeddable videos only). Direct video files (https .mp4/.webm/.mov/.m4v/.ogv) are accepted by URL shape; the admin UI checks they play in the browser before calling this.
+ * @summary Check a video link and, if it plays, publish it as the founder's pitch on the landing page
+ */
+export const SetPitchVideoBody = zod.object({
+  "url": zod.string()
+})
+
+export const SetPitchVideoResponse = zod.object({
+  "url": zod.string().describe('The link as the admin entered it.'),
+  "provider": zod.enum(['youtube', 'vimeo', 'file']),
+  "embedUrl": zod.string().describe('Player URL (YouTube\/Vimeo iframe src) or the direct video file URL.'),
+  "title": zod.string().nullable(),
+  "thumbnailUrl": zod.string().nullable(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Remove the founder's pitch video from the landing page
+ */
+export const DeletePitchVideoResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+
+/**
  * @summary Update editable site content (admin)
  */
 export const PutSiteContentBody = zod.object({
@@ -886,7 +920,15 @@ export const PutSiteContentBody = zod.object({
   "body": zod.string(),
   "supportLabel": zod.string(),
   "laterLabel": zod.string()
-}).optional()
+}).optional(),
+  "pitchVideo": zod.object({
+  "url": zod.string().describe('The link as the admin entered it.'),
+  "provider": zod.enum(['youtube', 'vimeo', 'file']),
+  "embedUrl": zod.string().describe('Player URL (YouTube\/Vimeo iframe src) or the direct video file URL.'),
+  "title": zod.string().nullable(),
+  "thumbnailUrl": zod.string().nullable(),
+  "updatedAt": zod.string()
+}).optional().describe('Founder\'s pitch video shown on the landing page; absent when none is set.')
 })
 
 export const PutSiteContentResponse = zod.object({
@@ -907,7 +949,15 @@ export const PutSiteContentResponse = zod.object({
   "body": zod.string(),
   "supportLabel": zod.string(),
   "laterLabel": zod.string()
-}).optional()
+}).optional(),
+  "pitchVideo": zod.object({
+  "url": zod.string().describe('The link as the admin entered it.'),
+  "provider": zod.enum(['youtube', 'vimeo', 'file']),
+  "embedUrl": zod.string().describe('Player URL (YouTube\/Vimeo iframe src) or the direct video file URL.'),
+  "title": zod.string().nullable(),
+  "thumbnailUrl": zod.string().nullable(),
+  "updatedAt": zod.string()
+}).optional().describe('Founder\'s pitch video shown on the landing page; absent when none is set.')
 })
 
 

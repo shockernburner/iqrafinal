@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { DonationPopup } from './donationPopup';
+import type { PitchVideo } from './pitchVideo';
 import type { SiteHero } from './siteHero';
 import type { SitePillar } from './sitePillar';
 
@@ -14,4 +15,6 @@ export interface SiteContent {
   pillars?: SitePillar[];
   visionHero?: SiteHero;
   popup?: DonationPopup;
+  /** Founder's pitch video shown on the landing page; absent when none is set. */
+  pitchVideo?: PitchVideo;
 }

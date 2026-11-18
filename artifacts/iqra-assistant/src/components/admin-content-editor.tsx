@@ -6,16 +6,16 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Save } from "lucide-react";
 import { useGetSiteContent, usePutSiteContent } from "@workspace/api-client-react";
-import type { SiteContent } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { mergeContent } from "@/lib/site-content";
+import { mergeContent, type EditableSiteContent } from "@/lib/site-content";
+import AdminPitchVideo from "@/components/admin-pitch-video";
 
 export default function AdminContentEditor() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { data, isLoading } = useGetSiteContent();
-  const [content, setContent] = useState<Required<SiteContent>>(mergeContent(data));
+  const [content, setContent] = useState<EditableSiteContent>(mergeContent(data));
 
   useEffect(() => {
     setContent(mergeContent(data));
@@ -46,6 +46,8 @@ export default function AdminContentEditor() {
 
   return (
     <div className="space-y-6">
+      <AdminPitchVideo />
+
       <Card>
         <CardHeader className="border-b pb-4">
           <CardTitle>Landing Hero</CardTitle>
