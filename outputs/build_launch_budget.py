@@ -89,8 +89,8 @@ inp("C15", 800, INT)
 # Model selection
 head(17, ["Claude model", "Input $/1M tokens", "Output $/1M tokens", "", "", "Basis / source"])
 models = [
-    ("Claude Sonnet 4.6 (current)", 3, 15, "Model the app uses today (iqra-llm.ts). Anthropic list price; Replit AI Integrations bills at public API prices."),
-    ("Claude Sonnet 5.5", 2, 10, "Current Sonnet: newer and ~33% cheaper than 4.6. Anthropic list price (Nov 2026)."),
+    ("Claude Sonnet 5.5 (in use)", 2, 10, "What the app uses since Nov 2026, falling back to Claude Sonnet 5 at the same price if Replit doesn't offer 5.5 yet. Anthropic list price; Replit AI Integrations bills at public API prices."),
+    ("Claude Sonnet 4.6 (previous)", 3, 15, "What the app used before Nov 2026, for comparison. Anthropic list price."),
     ("Claude Haiku 5.5", 0.10, 0.50, "Cheapest current model; quality on nuanced guidance must be tested first. Anthropic list price, prompts ≤100K tokens."),
 ]
 for i, (name, pin, pout, src) in enumerate(models):
@@ -221,10 +221,10 @@ notes = [
     ("What \"bare minimum\" includes", "Store accounts, hosting, database, email and AI answers. Excludes marketing, salaries, paid design, app-store ads, OCR of scanned books, and taxes/VAT."),
     ("Mobile apps", "The app is already an installable web app (PWA). Android: wrap it with a Trusted Web Activity (Bubblewrap) — free. iOS: wrap with Capacitor and build in Xcode on your Mac — free. Apple can reject apps that are only a website in a wrapper (App Review guideline 4.2): add native value (e.g. push notifications, offline saved answers) before submitting."),
     ("Payments inside the apps", "If donations are taken inside the iOS/Android apps, Apple/Google rules apply. Donations to registered nonprofits may use an external link; otherwise in-app purchase fees (15–30%) apply. Not included."),
-    ("Biggest lever", "AI answers are almost all of the cost and scale with questions answered. Levers: switch to Claude Sonnet 5.5 (~33% cheaper than 4.6 per token), cap free questions per user per day, cache repeated questions, or test Claude Haiku 5.5 for simple questions."),
+    ("Biggest lever", "AI answers are almost all of the cost and scale with questions answered. Done: switched to Claude Sonnet 5.5 (~33% cheaper than 4.6 per token). Next levers: cap free questions per user per day, cache repeated questions, or test Claude Haiku 5.5 for simple questions."),
     ("Concurrent users", "Here 'concurrent' means people using the app at the same moment at peak. If your 1,000/2,000/4,000 are actually monthly active users, set 'Average concurrency' and 'Questions per hour' much lower — costs fall proportionally."),
     ("Server size", "At 4,000 concurrent users and 6 questions/hour the app handles ~7 questions/second at peak; the server mostly waits on the AI, so a 4 vCPU Reserved VM is a reasonable start. Apply the search fix in docs/knowledge-upload-60gb-plan.md first, or database search becomes the bottleneck."),
-    ("Source: Anthropic model prices", "Anthropic API list prices, Nov 2026: Sonnet 4.6 $3/$15, Sonnet 5.5 $2/$10, Haiku 5.5 $0.10/$0.50 per million input/output tokens. Replit AI Integrations bill at public API prices: https://docs.replit.com/features/integrations/replit-ai-integrations"),
+    ("Source: Anthropic model prices", "Anthropic API list prices, Nov 2026: Sonnet 5.5 and Sonnet 5 $2/$10, Sonnet 4.6 $3/$15, Haiku 5.5 $0.10/$0.50 per million input/output tokens. Replit AI Integrations bill at public API prices: https://docs.replit.com/features/integrations/replit-ai-integrations"),
     ("Source: Replit deployment", "https://docs.replit.com/billing/deployment-pricing"),
     ("Source: Replit database, storage, transfer", "https://docs.replit.com/billing/aug-cloud-billing-updates ; 100 GiB per production database: https://docs.replit.com/billing/about-usage-based-billing"),
     ("Source: Replit plans", "https://replit.com/pricing"),
