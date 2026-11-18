@@ -29,7 +29,7 @@ Storage space and storage cost are not a concern.
 
 ## Constraints, in order of impact
 
-### 1. Search gets ~13× slower: fix before or during the import (recommended code change)
+### 1. Search gets ~13× slower: ✅ fixed (Nov 2026, all-keywords-first search)
 For every question, the assistant searches all chunks for *any* of the question's keywords and scores every match. The work grows with the size of the knowledge base.
 
 | Search per question (fast laptop, data cached) | 58k chunks (today) | 290k chunks (measured) | ~830k chunks (projected) |
@@ -86,7 +86,7 @@ For every question, the assistant searches all chunks for *any* of the question'
 - **Upload security:** only the designated uploaders, with the second password, can import.
 
 ## Recommended order for the month
-1. Apply the search fix (constraint 1) and switch to a Reserved VM (constraint 2).
+1. ~~Apply the search fix (constraint 1)~~ (done) and switch to a Reserved VM (constraint 2).
 2. Spot-check the 60 GB for scans; OCR or set aside image-only PDFs.
 3. Split into 5–10 GB Drive folders; import the first one and measure indexing speed.
 4. Import the rest, checking failed documents after each folder.
