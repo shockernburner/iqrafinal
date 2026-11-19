@@ -50,11 +50,11 @@ def label(row, text, unit=None, source=None):
     if unit is not None:
         ws.cell(row=row, column=2, value=unit).font = Font(name=F, color="666666")
     if source:
-        s = ws.cell(row=row, column=6, value=source)
+        s = ws.cell(row=row, column=8, value=source)
         s.font = Font(name=F, size=9, color="666666")
 
 # Traffic per month
-head(4, ["Traffic", "Unit", "Month 1", "Month 2", "Month 3", "Basis / source"])
+head(4, ["Traffic", "Unit", "Month 1", "Month 2", "Month 3", "", "", "Basis / source"])
 label(5, "Users", "users", "Given by the user (1,000 / 2,000 / 4,000). Change these to model growth. Meaning is set in row 7.")
 inp("C5", 1000, INT); inp("D5", 2000, INT); inp("E5", 4000, INT)
 label(6, "Reserved VM for the app server", "$/month",
@@ -68,7 +68,7 @@ dv_mode = DataValidation(type="list", formula1='"Concurrent at peak,Monthly acti
 ws.add_data_validation(dv_mode); dv_mode.add("C7")
 
 # Usage behaviour
-head(8, ["Usage behaviour", "Unit", "Value", "", "", "Basis / source"])
+head(8, ["Usage behaviour", "Unit", "Value", "", "", "", "", "Basis / source"])
 label(9, "Average concurrency as % of peak", "%", "Assumption: daily traffic averages ~35% of its peak hour. Raise if usage is flat across the day.")
 inp("C9", 0.35, PCT, "Assumption. Peak concurrent users only happen at busy hours; over 24h the average is lower.")
 label(10, "Questions per active user per hour", "questions", "Assumption: one question every ~10 minutes while a user has the app open.")
@@ -79,32 +79,47 @@ label(12, "Questions per monthly active user per month", "questions", "Used only
 inp("C12", 30, INT)
 
 # Tokens per answer
-head(13, ["Tokens per answer (from the code)", "Unit", "Value", "", "", "Basis / source"])
-label(14, "Input tokens per question", "tokens",
-      "Measured from code: system prompt 6,070 chars + 6 knowledge chunks × 2,600 chars + 3 example Q&As + question ≈ 7,500 tokens (more for Arabic/Bengali).")
-inp("C14", 7500, INT)
-label(15, "Output tokens per answer", "tokens", "Assumption: structured answer (direct answer, framework, sources) ≈ 800 tokens.")
+head(13, ["Tokens per answer (measured from the code)", "Unit", "Value", "", "", "", "", "Basis / source"])
+label(14, "Input tokens per question (Sonnet 4.6 tokenizer)", "tokens",
+      "Measured: system prompt 6,070 chars + 6 chunks × ~2,660 chars + 3 example Q&As × 2,435 chars (avg of 502 training rows) + question ≈ 29,700 chars ≈ 7,400 tokens. Newer models' tokenizer factor is applied per model below.")
+inp("C14", 7400, INT)
+label(15, "Output tokens per answer (Sonnet 4.6 tokenizer)", "tokens", "Assumption: structured answer (direct answer, framework, sources) ≈ 800 tokens.")
 inp("C15", 800, INT)
+label(16, "System prompt tokens (cacheable part)", "tokens", "6,070 chars ≈ 1,500 tokens. Identical on every question, so it can be cached (see row 23).")
+inp("C16", 1500, INT)
 
 # Model selection
-head(17, ["Claude model", "Input $/1M tokens", "Output $/1M tokens", "", "", "Basis / source"])
+head(17, ["Claude model", "Input $/1M", "Output $/1M", "Cache read $/1M", "Tokenizer factor", "Thinking tokens", "Cost per question", "Basis / source"])
 models = [
-    ("Claude Sonnet 5.5 (in use)", 2, 10, "What the app uses since Nov 2026, falling back to Claude Sonnet 5 at the same price if Replit doesn't offer 5.5 yet. Anthropic list price; Replit AI Integrations bills at public API prices."),
-    ("Claude Sonnet 4.6 (previous)", 3, 15, "What the app used before Nov 2026, for comparison. Anthropic list price."),
-    ("Claude Haiku 5.5", 0.10, 0.50, "Cheapest current model; quality on nuanced guidance must be tested first. Anthropic list price, prompts ≤100K tokens."),
+    ("Claude Sonnet 5.5 (in use)", 2, 10, 0.10, 1.30, 150,
+     "Live since Nov 2026 (confirmed in Replit logs). Anthropic list price; Replit bills at public API prices. Its tokenizer turns the same text into ~30% more tokens than Sonnet 4.6. At effort 'low' it skips thinking on most questions; ~150 thinking tokens on average is an estimate."),
+    ("Claude Sonnet 4.6 (previous)", 3, 15, 0.30, 1.00, 0,
+     "Used before Nov 2026, for comparison. Anthropic list price. Ran without thinking."),
+    ("Claude Haiku 5.5", 0.10, 0.50, 0.01, 1.30, 150,
+     "Cheapest current model; test answer quality first. Anthropic list price (prompts ≤100K tokens); same newer tokenizer (~30% more tokens)."),
 ]
-for i, (name, pin, pout, src) in enumerate(models):
+for i, (name, pin, pout, pcache, factor, thinking, src) in enumerate(models):
     r = 18 + i
     ws.cell(row=r, column=1, value=name).font = BLACK
-    inp(f"B{r}", pin, USD2); inp(f"C{r}", pout, USD2)
-    ws.cell(row=r, column=6, value=src).font = Font(name=F, size=9, color="666666")
+    inp(f"B{r}", pin, USD2); inp(f"C{r}", pout, USD2); inp(f"D{r}", pcache, USD2)
+    inp(f"E{r}", factor, "0.00x"); inp(f"F{r}", thinking, INT)
+    cached = f'IF($C$23="Yes",$C$16*E{r},0)'
+    g = ws[f"G{r}"]
+    g.value = f"=(($C$14*E{r}-{cached})*B{r}+{cached}*D{r}+($C$15*E{r}+F{r})*C{r})/1000000"
+    g.number_format, g.font, g.border = USD4, BLACK, BOX
+    ws.cell(row=r, column=8, value=src).font = Font(name=F, size=9, color="666666")
 label(22, "Selected model for the Budget tab", None, "Pick from the list. The Model comparison tab shows all three side by side.")
 inp("C22", models[0][0], "@")
 dv = DataValidation(type="list", formula1="=$A$18:$A$20", allow_blank=False)
 ws.add_data_validation(dv); dv.add("C22")
+label(23, "System prompt cached", None,
+      "'Yes' = how the app works since Nov 2026: the system prompt is billed at the cache-read price (Sonnet 5.5 caches prompts ≥512 tokens; with steady traffic the cache stays warm, so cache-write cost is negligible). Set 'No' to see the cost without it.")
+inp("C23", "Yes", "@")
+dv_cache = DataValidation(type="list", formula1='"No,Yes"', allow_blank=False)
+ws.add_data_validation(dv_cache); dv_cache.add("C23")
 
 # Fixed and platform costs
-head(24, ["Platform & fixed costs", "Unit", "Value", "", "", "Basis / source"])
+head(24, ["Platform & fixed costs", "Unit", "Value", "", "", "", "", "Basis / source"])
 fixed = [
     (25, "Apple Developer Program", "$/year", 99, USD, "Apple, $99/year; paid in month 1."),
     (26, "Google Play developer registration", "one-time", 25, USD, "Google Play Console, one-time $25; paid in month 1."),
@@ -126,9 +141,9 @@ for r, text, unit, val, fmt, src in fixed:
 
 ws.column_dimensions["A"].width = 40
 ws.column_dimensions["B"].width = 18
-for col in "CDE":
-    ws.column_dimensions[col].width = 14
-ws.column_dimensions["F"].width = 100
+for col in "CDEFG":
+    ws.column_dimensions[col].width = 15
+ws.column_dimensions["H"].width = 100
 ws.freeze_panes = "A4"
 
 # ---------------------------------------------------------------- Budget
@@ -161,8 +176,8 @@ row(7, "Questions answered", {k: f'=IF(Inputs!$C$7="Monthly active users",Inputs
     "Concurrent: users × average-% × hours × questions per user-hour.  Monthly active: users × questions per user per month.")
 row(8, "Questions per second at peak (concurrent mode)", {k: f'=IF(Inputs!$C$7="Monthly active users",0,Inputs!{v}5*Inputs!$C$10/3600)' for k, v in months.items()}, DEC1,
     "For sizing: peak users × questions per hour ÷ 3,600 (shown only in concurrent mode).", total=False)
-row(9, "AI cost per question", {k: "=(Inputs!$C$14*INDEX(Inputs!$B$18:$B$20,MATCH(Inputs!$C$22,Inputs!$A$18:$A$20,0))+Inputs!$C$15*INDEX(Inputs!$C$18:$C$20,MATCH(Inputs!$C$22,Inputs!$A$18:$A$20,0)))/1000000" for k in months},
-    USD4, "(input tokens × input price + output tokens × output price) ÷ 1,000,000 for the selected model.", total=False)
+row(9, "AI cost per question", {k: "=INDEX(Inputs!$G$18:$G$20,MATCH(Inputs!$C$22,Inputs!$A$18:$A$20,0))" for k in months},
+    USD4, "From the model table on Inputs: tokens × prices for the selected model, incl. tokenizer factor, thinking and caching.", total=False)
 
 # Costs
 b["A11"] = "Costs"; b["A11"].font = BOLD
@@ -193,7 +208,7 @@ b.freeze_panes = "B5"
 # ---------------------------------------------------------------- Model comparison
 m = wb.create_sheet("Model comparison")
 m["A1"] = "Same traffic, different Claude model (USD)"; m["A1"].font = TITLE
-m["A2"] = "AI cost depends only on the model and the Inputs; everything else is identical across rows."
+m["A2"] = '="AI cost depends only on the model and the Inputs; everything else is identical across rows.   System prompt cached: "&Inputs!$C$23'
 m["A2"].font = Font(name=F, italic=True)
 for i, h in enumerate(["Model", "Cost per question", "AI cost month 1", "AI cost month 2", "AI cost month 3",
                        "3-month AI cost", "3-month TOTAL (incl. platform + contingency)"]):
@@ -201,7 +216,7 @@ for i, h in enumerate(["Model", "Cost per question", "AI cost month 1", "AI cost
 for i in range(3):
     r, ir = 5 + i, 18 + i
     m[f"A{r}"] = f"=Inputs!A{ir}"; m[f"A{r}"].font = GREEN
-    m[f"B{r}"] = f"=(Inputs!$C$14*Inputs!B{ir}+Inputs!$C$15*Inputs!C{ir})/1000000"; m[f"B{r}"].number_format = USD4
+    m[f"B{r}"] = f"=Inputs!G{ir}"; m[f"B{r}"].number_format = USD4
     for j, col in enumerate("CDE"):
         m[f"{col}{r}"] = f"=Budget!{'BCD'[j]}$7*$B{r}"; m[f"{col}{r}"].number_format = USD
     m[f"F{r}"] = f"=SUM(C{r}:E{r})"; m[f"F{r}"].number_format = USD
@@ -221,15 +236,15 @@ notes = [
     ("What \"bare minimum\" includes", "Store accounts, hosting, database, email and AI answers. Excludes marketing, salaries, paid design, app-store ads, OCR of scanned books, and taxes/VAT."),
     ("Mobile apps", "The app is already an installable web app (PWA). Android: wrap it with a Trusted Web Activity (Bubblewrap) — free. iOS: wrap with Capacitor and build in Xcode on your Mac — free. Apple can reject apps that are only a website in a wrapper (App Review guideline 4.2): add native value (e.g. push notifications, offline saved answers) before submitting."),
     ("Payments inside the apps", "If donations are taken inside the iOS/Android apps, Apple/Google rules apply. Donations to registered nonprofits may use an external link; otherwise in-app purchase fees (15–30%) apply. Not included."),
-    ("Biggest lever", "AI answers are almost all of the cost and scale with questions answered. Done: switched to Claude Sonnet 5.5 (~33% cheaper than 4.6 per token). Next levers: cap free questions per user per day, cache repeated questions, or test Claude Haiku 5.5 for simple questions."),
+    ("Biggest lever", "AI answers are almost all of the cost and scale with questions answered. Done: Claude Sonnet 5.5 (its per-token price is 33% lower than 4.6, but its tokenizer counts ~30% more tokens, so a question costs ~13% less). Also done: the system prompt is cached (~12% less per question). Next cheap levers: cap free questions per user per day, or test Claude Haiku 5.5 for simple questions."),
     ("Concurrent users", "Here 'concurrent' means people using the app at the same moment at peak. If your 1,000/2,000/4,000 are actually monthly active users, set 'Average concurrency' and 'Questions per hour' much lower — costs fall proportionally."),
     ("Server size", "At 4,000 concurrent users and 6 questions/hour the app handles ~7 questions/second at peak; the server mostly waits on the AI, so a 4 vCPU Reserved VM is a reasonable start. Apply the search fix in docs/knowledge-upload-60gb-plan.md first, or database search becomes the bottleneck."),
-    ("Source: Anthropic model prices", "Anthropic API list prices, Nov 2026: Sonnet 5.5 and Sonnet 5 $2/$10, Sonnet 4.6 $3/$15, Haiku 5.5 $0.10/$0.50 per million input/output tokens. Replit AI Integrations bill at public API prices: https://docs.replit.com/features/integrations/replit-ai-integrations"),
+    ("Source: Anthropic model prices", "Anthropic API list prices, Nov 2026: Sonnet 5.5 $2/$10 (cache reads $0.10), Sonnet 4.6 $3/$15 (cache reads $0.30), Haiku 5.5 $0.10/$0.50 per million input/output tokens. Sonnet 5.5 and Haiku 5.5 use a newer tokenizer that produces ~30% more tokens for the same text than Sonnet 4.6 (Anthropic migration guide). Replit AI Integrations bill at public API prices: https://docs.replit.com/features/integrations/replit-ai-integrations"),
     ("Source: Replit deployment", "https://docs.replit.com/billing/deployment-pricing"),
     ("Source: Replit database, storage, transfer", "https://docs.replit.com/billing/aug-cloud-billing-updates ; 100 GiB per production database: https://docs.replit.com/billing/about-usage-based-billing"),
     ("Source: Replit plans", "https://replit.com/pricing"),
     ("Source: store fees", "Apple Developer Program $99/year; Google Play Console $25 one-time (both unchanged in 2026)."),
-    ("Prepared", "18 Nov 2026. Prices change — re-check the sources before committing spend."),
+    ("Prepared", "18 Nov 2026; revised 19 Nov 2026 for Claude Sonnet 5.5 (tokenizer, thinking, system-prompt caching now live) and measured prompt size. Prices change — re-check the sources before committing spend."),
 ]
 for i, (k, v) in enumerate(notes):
     r = 3 + i

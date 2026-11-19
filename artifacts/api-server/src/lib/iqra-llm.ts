@@ -154,7 +154,11 @@ export async function createChatMessage(params: CreateParams, signal?: AbortSign
       continue;
     }
     // Server log only (Replit → Deployments → Logs); never shown to users.
-    logger.info({ model: message.model }, `Answered with ${message.model}`);
+    const { input_tokens, output_tokens, cache_read_input_tokens, cache_creation_input_tokens } = message.usage ?? {};
+    logger.info(
+      { model: message.model, input_tokens, output_tokens, cache_read_input_tokens, cache_creation_input_tokens },
+      `Answered with ${message.model}`,
+    );
     return message;
   }
   if (refused) return refused;
@@ -204,7 +208,9 @@ export async function generateLlmChatResponse(
   const message = await createChatMessage(
     {
       max_tokens: 8192,
-      system: SYSTEM_PROMPT,
+      // The system prompt is identical on every question, so it is cached: later
+      // questions read it at a tenth of the input price.
+      system: [{ type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
       messages: [{ role: "user", content: buildUserContent(prompt, chunks, examples) }],
     },
     signal,
