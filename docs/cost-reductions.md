@@ -55,6 +55,11 @@ What that means for the 3-month launch budget (from `outputs/IQRA_AppStore_Launc
 - **The founder video costs nothing to host.** It's served from YouTube/Vimeo, and the player only loads when a visitor presses play.
 - **The admin knowledge-base list shows 50 documents at a time.** This fixed the admin page freezing with ~28,800 documents, without a bigger server.
 
+### 6. Bengali and Arabic questions use the English library cheaply
+- **The problem:** the knowledge base is in English, so non-English questions found nothing in it and were answered from Claude's general knowledge.
+- **The fix:** each Bengali or Arabic question is first turned into English search keywords by Claude's smallest model, for **about $0.0005 per question** (~2% of an answer).
+- **Cost avoided:** this replaces a paid meaning-based (embeddings) search service.
+
 ## Deliberately deferred (paid, for when donations allow)
 
 | Upgrade | Why it's deferred | Rough cost |
