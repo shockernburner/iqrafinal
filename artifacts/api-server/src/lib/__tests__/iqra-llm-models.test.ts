@@ -16,7 +16,8 @@ vi.mock("../logger.js", () => ({ logger }));
 const { Anthropic } = await import("@workspace/integrations-anthropic-ai");
 
 function reply(model: string, stop_reason: string = "end_turn") {
-  return { model, stop_reason, content: [{ type: "text", text: `from ${model}` }] };
+  const usage = { input_tokens: 7600, output_tokens: 1100, cache_read_input_tokens: 2000, cache_creation_input_tokens: 0 };
+  return { model, stop_reason, usage, content: [{ type: "text", text: `from ${model}` }] };
 }
 function apiError(status: number, message: string) {
   return Anthropic.APIError.generate(status, { error: { message } }, message, new Headers());
@@ -40,7 +41,10 @@ describe("createChatMessage", () => {
     expect(message.model).toBe("claude-sonnet-5-5");
     expect(create).toHaveBeenCalledTimes(1);
     expect(create.mock.calls[0]![0]).toMatchObject({ model: "claude-sonnet-5-5", output_config: { effort: "low" } });
-    expect(logger.info).toHaveBeenCalledWith({ model: "claude-sonnet-5-5" }, "Answered with claude-sonnet-5-5");
+    expect(logger.info).toHaveBeenCalledWith(
+      expect.objectContaining({ model: "claude-sonnet-5-5", cache_read_input_tokens: 2000, output_tokens: 1100 }),
+      "Answered with claude-sonnet-5-5",
+    );
   });
 
   it("falls back to Claude Sonnet 5 when 5.5 isn't offered, and remembers it", async () => {
@@ -66,7 +70,7 @@ describe("createChatMessage", () => {
     expect(message.model).toBe("claude-sonnet-5");
     expect(message.stop_reason).toBe("end_turn");
     expect(logger.info).toHaveBeenCalledTimes(1);
-    expect(logger.info).toHaveBeenCalledWith({ model: "claude-sonnet-5" }, "Answered with claude-sonnet-5");
+    expect(logger.info).toHaveBeenCalledWith(expect.objectContaining({ model: "claude-sonnet-5" }), "Answered with claude-sonnet-5");
   });
 
   it("does not hide real failures such as outages or rate limits", async () => {
@@ -80,5 +84,18 @@ describe("createChatMessage", () => {
       .mockRejectedValueOnce(apiError(404, "model: claude-sonnet-5-5"))
       .mockRejectedValueOnce(apiError(404, "model: claude-sonnet-5"));
     await expect(createChatMessage(params)).rejects.toThrow("claude-sonnet-5");
+  });
+
+  it("sends the system prompt with a cache marker for the answer call", async () => {
+    create.mockResolvedValueOnce({
+      ...reply("claude-sonnet-5-5"),
+      content: [{ type: "text", text: JSON.stringify({ answer: "ok", framework: [], sourceLinks: [], confidence: "high" }) }],
+    });
+    const { generateLlmChatResponse } = await import("../iqra-llm.js");
+    await generateLlmChatResponse("What are the rights of neighbors?", [], []).catch(() => undefined);
+    const system = create.mock.calls[0]![0].system;
+    expect(Array.isArray(system)).toBe(true);
+    expect(system[0]).toMatchObject({ type: "text", cache_control: { type: "ephemeral" } });
+    expect(system[0].text.length).toBeGreaterThan(5000);
   });
 });
