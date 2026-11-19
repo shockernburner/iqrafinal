@@ -165,6 +165,51 @@ export async function createChatMessage(params: CreateParams, signal?: AbortSign
   throw new Error("No Claude model is available.");
 }
 
+// The knowledge base and training Q&As are in English, so a Bengali or Arabic
+// question can't match them word for word. For questions written in a
+// non-Latin script, a quick call to the smallest model turns the question into
+// English search keywords (~$0.0005 per question). Any failure or a slow reply
+// falls back to searching the original wording.
+export const SEARCH_TERMS_MODEL = "claude-haiku-4-5";
+const SEARCH_TERMS_TIMEOUT_MS = 8000;
+const NON_LATIN_LETTER = /(?=\p{L})\P{Script=Latin}/u;
+
+export function needsEnglishSearchTerms(text: string): boolean {
+  return NON_LATIN_LETTER.test(text);
+}
+
+export async function englishSearchTerms(prompt: string, signal?: AbortSignal): Promise<string | null> {
+  const timeout = AbortSignal.timeout(SEARCH_TERMS_TIMEOUT_MS);
+  try {
+    const message = await anthropic.messages.create(
+      {
+        model: SEARCH_TERMS_MODEL,
+        max_tokens: 150,
+        system:
+          "You turn a question about Islam into English search keywords for an English-language library of Islamic texts. " +
+          "Output 5 to 12 English keywords on one line, separated by spaces. Include the standard English words and the common " +
+          "transliterated Islamic terms for the concepts asked about (for example: barzakh, qiyamah, resurrection, akhirah, soul, ruh). " +
+          "Output only the keywords: no sentences, no punctuation, no explanation. Do not answer the question.",
+        messages: [{ role: "user", content: prompt }],
+      },
+      { signal: signal ? AbortSignal.any([signal, timeout]) : timeout },
+    );
+    const terms = message.content
+      .map((block) => (block.type === "text" ? block.text : ""))
+      .join(" ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 300);
+    const { input_tokens, output_tokens } = message.usage ?? {};
+    // Server log only; token counts for cost tracking, not the user's words.
+    logger.info({ model: message.model, input_tokens, output_tokens }, `English search terms with ${message.model}`);
+    return terms || null;
+  } catch (error) {
+    logger.warn({ err: (error as Error).message }, "English search terms failed; searching the original wording");
+    return null;
+  }
+}
+
 /**
  * Translate a fixed English message into the same language as the user's prompt.
  * Used for deterministic responses (e.g. the comparative-religion refusal) so they

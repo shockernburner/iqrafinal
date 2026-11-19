@@ -99,3 +99,34 @@ describe("createChatMessage", () => {
     expect(system[0].text.length).toBeGreaterThan(5000);
   });
 });
+
+describe("English search terms for non-English questions", () => {
+  it("detects questions written in a non-Latin script", async () => {
+    const { needsEnglishSearchTerms } = await import("../iqra-llm.js");
+    expect(needsEnglishSearchTerms("বারযাখে মানুষ কীভাবে থাকে?")).toBe(true);
+    expect(needsEnglishSearchTerms("ما هو البرزخ؟")).toBe(true);
+    expect(needsEnglishSearchTerms("What is barzakh?")).toBe(false);
+    expect(needsEnglishSearchTerms("Qu'est-ce que la prière à la mosquée ?")).toBe(false);
+  });
+
+  it("asks the smallest model, without effort settings, and returns one line of terms", async () => {
+    create.mockResolvedValueOnce({
+      model: "claude-haiku-4-5",
+      stop_reason: "end_turn",
+      usage: { input_tokens: 180, output_tokens: 20 },
+      content: [{ type: "text", text: "barzakh soul\nafterlife  resurrection qiyamah" }],
+    });
+    const { englishSearchTerms } = await import("../iqra-llm.js");
+    expect(await englishSearchTerms("বারযাখে মানুষ কীভাবে থাকে?")).toBe("barzakh soul afterlife resurrection qiyamah");
+    const params = create.mock.calls[0]![0];
+    expect(params.model).toBe("claude-haiku-4-5");
+    expect(params.output_config).toBeUndefined();
+    expect(create.mock.calls[0]![1].signal).toBeInstanceOf(AbortSignal);
+  });
+
+  it("returns null instead of failing the answer when the call errors", async () => {
+    create.mockRejectedValueOnce(apiError(529, "Overloaded"));
+    const { englishSearchTerms } = await import("../iqra-llm.js");
+    expect(await englishSearchTerms("বারযাখ কী?")).toBeNull();
+  });
+});

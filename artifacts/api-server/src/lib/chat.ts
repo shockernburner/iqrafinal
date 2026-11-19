@@ -1,8 +1,8 @@
 import { assessIqraPolicy, COMPARATIVE_RELIGION_REFUSAL } from "./iqra-policy";
 import { formatBasmala } from "./iqra-response";
-import { searchKnowledgeChunks } from "./retrieval";
+import { extractKeywords, searchKnowledgeChunks } from "./retrieval";
 import { findRelevantTrainingRecords } from "./training-data";
-import { generateLlmChatResponse, localizeMessage } from "./iqra-llm";
+import { englishSearchTerms, generateLlmChatResponse, localizeMessage, needsEnglishSearchTerms } from "./iqra-llm";
 
 export type ChatApiPayload = {
   basmala: string;
@@ -78,9 +78,13 @@ export async function generateIqraChatResponse(prompt: string, signal?: AbortSig
     };
   }
 
+  // Non-English questions are also searched with English keywords, because the
+  // knowledge base and training Q&As are in English. English terms go first; the
+  // original wording still fills any remaining places (e.g. from Bengali books).
+  const englishTerms = needsEnglishSearchTerms(prompt) ? await englishSearchTerms(prompt, signal) : null;
   const [chunks, examples] = await Promise.all([
-    searchKnowledgeChunks(prompt, 6),
-    findRelevantTrainingRecords(prompt, 3),
+    searchKnowledgeChunks(englishTerms ? [englishTerms, prompt] : prompt, 6),
+    findRelevantTrainingRecords(englishTerms ? extractKeywords(englishTerms).join(" or ") : prompt, 3),
   ]);
 
   const llm = await generateLlmChatResponse(prompt, chunks, examples, signal);
