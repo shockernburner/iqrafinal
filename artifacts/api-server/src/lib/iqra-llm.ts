@@ -153,6 +153,8 @@ export async function createChatMessage(params: CreateParams, signal?: AbortSign
       refused = message;
       continue;
     }
+    // Server log only (Replit → Deployments → Logs); never shown to users.
+    logger.info({ model: message.model }, `Answered with ${message.model}`);
     return message;
   }
   if (refused) return refused;

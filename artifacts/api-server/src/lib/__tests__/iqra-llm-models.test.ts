@@ -10,7 +10,8 @@ vi.mock("@workspace/integrations-anthropic-ai", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@workspace/integrations-anthropic-ai")>();
   return { ...actual, anthropic: { messages: { create } } };
 });
-vi.mock("../logger.js", () => ({ logger: { warn: vi.fn(), info: vi.fn(), error: vi.fn() } }));
+const { logger } = vi.hoisted(() => ({ logger: { warn: vi.fn(), info: vi.fn(), error: vi.fn() } }));
+vi.mock("../logger.js", () => ({ logger }));
 
 const { Anthropic } = await import("@workspace/integrations-anthropic-ai");
 
@@ -25,6 +26,7 @@ let createChatMessage: typeof import("../iqra-llm.js").createChatMessage;
 
 beforeEach(async () => {
   create.mockReset();
+  logger.info.mockReset();
   vi.resetModules(); // fresh "unavailable model" memory per test
   ({ createChatMessage } = await import("../iqra-llm.js"));
 });
@@ -38,6 +40,7 @@ describe("createChatMessage", () => {
     expect(message.model).toBe("claude-sonnet-5-5");
     expect(create).toHaveBeenCalledTimes(1);
     expect(create.mock.calls[0]![0]).toMatchObject({ model: "claude-sonnet-5-5", output_config: { effort: "low" } });
+    expect(logger.info).toHaveBeenCalledWith({ model: "claude-sonnet-5-5" }, "Answered with claude-sonnet-5-5");
   });
 
   it("falls back to Claude Sonnet 5 when 5.5 isn't offered, and remembers it", async () => {
@@ -62,6 +65,8 @@ describe("createChatMessage", () => {
     const message = await createChatMessage(params);
     expect(message.model).toBe("claude-sonnet-5");
     expect(message.stop_reason).toBe("end_turn");
+    expect(logger.info).toHaveBeenCalledTimes(1);
+    expect(logger.info).toHaveBeenCalledWith({ model: "claude-sonnet-5" }, "Answered with claude-sonnet-5");
   });
 
   it("does not hide real failures such as outages or rate limits", async () => {
