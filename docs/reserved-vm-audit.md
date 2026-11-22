@@ -5,7 +5,7 @@
 **Answer:**
 - **Before this fix, yes.** I found and reproduced a crash that a long-running server makes much more likely.
 - **That crash is now fixed and tested.**
-- **One platform question can't be checked from the code:** whether Replit runs IQRA's two-service layout on a Reserved VM. Use the switching steps below so the live site is never at risk.
+- **One platform question can't be checked from the code:** whether Replit runs IQRA's two-service layout on a Reserved VM. Switching requires unpublishing the app first; see below.
 
 ## Why apps crash after switching
 
@@ -34,20 +34,34 @@ On **Autoscale**, server processes are started and stopped constantly, so they r
 
 ## Not verifiable from the code: IQRA's two-service layout
 
-IQRA is published as two services behind Replit's router: the API at `/api` (port 8080) and the pre-built website at `/`. Replit's docs say "Reserved VM deployments support only one external port". They don't say whether a router-based project like this is supported on a Reserved VM. Only Replit can confirm. Ask Replit's own Agent in the workspace, or follow the steps below.
+IQRA is published as two services behind Replit's router: the API at `/api` (port 8080) and the pre-built website at `/`. Replit's docs say "Reserved VM deployments support only one external port". They don't say whether a router-based project like this is supported on a Reserved VM. Only Replit can confirm. Ask Replit's own Agent in the workspace before switching.
 
 ## Machine size
 
 - **Normal use:** Dedicated 1 vCPU / 4 GB ($35/month). Avoid the shared 0.5 vCPU / 2 GB tier. One upload can hold 50 MB in memory, PDF text extraction can use several times the file size, and chat traffic runs alongside it.
 - **The 60 GB import month:** Dedicated 2 vCPU / 8 GB ($50/month). A Drive import downloads 4 files at once (up to 50 MB each) while the indexer reads another.
 
-## Safe switching steps
-1. **Deploy the stability fix on Autoscale first** and confirm the site works as usual.
-2. **Switch at a quiet hour:** Publishing → Adjust settings → Deployment type → Reserved VM, then Dedicated 2 vCPU / 8 GB. Republish.
-3. **Check right after publishing:**
+## Switching is not a simple toggle (checked in Replit, 22 Nov 2026)
+
+Replit only lets you change the deployment type by **unpublishing and publishing again**. Its warning says unpublishing:
+- takes the live app offline until it is published again;
+- deletes the published app, its `replit.app` domain and its publish history;
+- removes secrets added under Publishing → Adjust settings (secrets in the workspace **Secrets** pane are kept).
+
+**Risks for IQRA:**
+- **Google sign-in:** if the `replit.app` address changes, the redirect URIs registered in Google Cloud Console stop matching. Google sign-in fails until they are updated. A custom domain avoids this.
+- **The two-service layout:** if a Reserved VM doesn't support it, you'd have to publish as Autoscale again, possibly on a new address.
+
+**Recommendation: stay on Autoscale.** The stability fix protects both types. On Autoscale, the only cost is that bulk indexing pauses while nobody is using the site and resumes with the next visitor.
+
+### If you do switch later (e.g. for the 60 GB import)
+1. **Before unpublishing,** copy every secret from Publishing → Adjust settings → Production app secrets into the workspace Secrets pane.
+2. **Note the current address** and the Google OAuth redirect URIs.
+3. **Ask Replit's Agent first** whether this multi-artifact project can be published as a Reserved VM.
+4. **At a quiet hour:** Change deployment type → Yes, unpublish. Publish as Reserved VM, Dedicated 2 vCPU / 8 GB.
+5. **Check:**
    - The homepage loads.
-   - Sign in works.
+   - Google and email sign-in work. Update the Google redirect URIs if the address changed.
    - A chat question gets an answer (logs: `Answered with claude-sonnet-5-5`).
    - The admin dashboard opens.
-4. **If publishing fails or anything misbehaves:** switch the deployment type back to Autoscale and republish. Your database, files and settings are not affected by the deployment type.
-5. **Over the next days:** search the logs for `database connection dropped`. Those lines are expected and harmless now. Also search for `Uncaught exception`, which should never appear.
+6. **Over the next days:** search the logs for `database connection dropped`. Those lines are expected and harmless. Also search for `Uncaught exception`, which should never appear.

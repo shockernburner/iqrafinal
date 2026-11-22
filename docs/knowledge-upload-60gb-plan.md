@@ -52,8 +52,8 @@ For every question, the assistant searches all chunks for *any* of the question'
 - **Recommendation: switch to a Reserved VM for the import month.**
   - Dedicated **2 vCPU / 8 GB costs about $50/month** ([pricing](https://docs.replit.com/billing/deployment-pricing)).
   - It keeps indexing running around the clock, and 8 GB of memory leaves room to read large PDFs.
-  - Switch back to Autoscale afterwards if traffic is low.
-  - Check which type is live in Replit → Deployments; `replit.md` assumes a Reserved VM.
+  - **Switching requires unpublishing the app** (the live site goes down and the `replit.app` address and Google sign-in redirect may change). Staying on Autoscale is acceptable; indexing then only progresses while people use the site.
+  - The live deployment is Autoscale (2 vCPU / 4 GB, max 3 machines), confirmed 22 Nov 2026.
   - Before switching, deploy the stability fix and follow the steps in [reserved-vm-audit.md](reserved-vm-audit.md).
 
 ### 3. Scanned PDFs (images of pages) will fail
