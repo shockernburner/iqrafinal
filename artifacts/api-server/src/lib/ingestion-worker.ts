@@ -273,6 +273,11 @@ async function processJob(job: ClaimedJob) {
 
 let running = false;
 
+/** Stops picking up new jobs; a job already running finishes or is reclaimed later via its lease. */
+export function stopIngestionWorker() {
+  running = false;
+}
+
 export function startIngestionWorker() {
   if (running) return;
   running = true;
