@@ -54,6 +54,7 @@ For every question, the assistant searches all chunks for *any* of the question'
   - It keeps indexing running around the clock, and 8 GB of memory leaves room to read large PDFs.
   - Switch back to Autoscale afterwards if traffic is low.
   - Check which type is live in Replit → Deployments; `replit.md` assumes a Reserved VM.
+  - Before switching, deploy the stability fix and follow the steps in [reserved-vm-audit.md](reserved-vm-audit.md).
 
 ### 3. Scanned PDFs (images of pages) will fail
 - **There is no OCR.** A PDF without a text layer fails with "No extractable text was found" and is never searchable. Many classical Islamic texts circulate as scans, so this could affect a big share of 60 GB.

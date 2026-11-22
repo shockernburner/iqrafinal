@@ -73,6 +73,8 @@ _Populate as you build — explicit user instructions worth remembering across s
 
 ## Gotchas
 
+- The `pg` Pool must keep its `error` listeners (`lib/db/src/index.ts`): without them a dropped DB connection (Replit's DB suspends after ~5 idle min) crashes the whole process — reproduced locally. Matters most on a Reserved VM, where the process lives for days. `index.ts` also logs unhandled rejections, exits on uncaught exceptions for a platform restart, and shuts down gracefully on SIGTERM. See `docs/reserved-vm-audit.md`.
+
 - esbuild only bundles JS — see `.agents/memory/api-server-esbuild-build.md` for why non-JS runtime files (migrations, data) need an explicit copy step in `build.mjs`.
 - Generated Orval query hooks can falsely require `queryKey` in options — see `.agents/memory/orval-query-option-typing.md`.
 - Always restart both `artifacts/api-server` and `artifacts/iqra-assistant` workflows after backend or frontend code changes.
