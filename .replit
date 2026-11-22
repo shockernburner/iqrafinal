@@ -49,3 +49,6 @@ RESEND_FROM_WELCOME_EMAIL = "welcome@iqra.live"
 RESEND_FROM_DONATION_EMAIL = "thanks@iqra.live"
 RESEND_FROM_PASSWORD_RESET = "Password Reset <reset-password@iqra.live>"
 ADMIN_EMAILS = "contact@iqra.live,firdous.mahmood26@gmail.com"
+
+[objectStorage]
+defaultBucketID = "replit-objstore-dc03d134-8b81-494f-a954-7f24ae0b21ae"
